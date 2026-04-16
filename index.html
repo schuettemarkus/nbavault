@@ -8451,9 +8451,11 @@ function DraftSimulator() {
                         const starter = starters.find(p => p.pos === pos || p.pos.includes(pos));
                         posMap[pos] = starter ? { name: starter.name, ppg: starter.stats.ppg } : { name: `${config.name} ${pos}`, ppg: 10 };
                       });
+                      // Only place the pick in ONE slot (first matching position)
+                      const pickPos = userPick.pos.split('/')[0];
                       return ['PG', 'SG', 'SF', 'PF', 'C'].map(pos => {
-                        const pickFits = userPick.pos.includes(pos);
-                        return { pos, name: pickFits ? userPick.name : posMap[pos].name, ppg: pickFits ? userPick.stats.ppg : posMap[pos].ppg };
+                        const pickHere = pos === pickPos;
+                        return { pos, name: pickHere ? userPick.name : posMap[pos].name, ppg: pickHere ? userPick.stats.ppg : posMap[pos].ppg };
                       });
                     })().map((slot, i) => (
                       <div key={i} className={`flex items-center gap-2 rounded-lg p-2 ${slot.name === userPick.name ? 'bg-team-secondary/15 border border-team-secondary/30' : 'bg-gray-900/30'}`}>
