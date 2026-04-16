@@ -6076,122 +6076,152 @@ function applyTeamColors(colors) {
 const TEAM_CONFIGS = {
   ATL: { abbr: 'ATL', city: 'Atlanta', name: 'Hawks', fullName: 'Atlanta Hawks', conference: 'East',
     colors: { primary: '#E03A3E', secondary: '#C1D32F', midnight: '#1A0000', deep: '#2D0A0A', light: '#FF6B6B', black: '#000000' },
+    franchiseId: 1610612737,
     coach: 'Quin Snyder', gm: 'Landry Fields', arena: 'State Farm Arena',
     players: ATL_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: ATL_POLL_QUESTIONS, lotteryTeams: null },
   BOS: { abbr: 'BOS', city: 'Boston', name: 'Celtics', fullName: 'Boston Celtics', conference: 'East',
     colors: { primary: '#007A33', secondary: '#BA9653', midnight: '#001A0A', deep: '#002E14', light: '#00B24A', black: '#000000' },
+    franchiseId: 1610612738,
     coach: 'Joe Mazzulla', gm: 'Brad Stevens', arena: 'TD Garden',
     players: BOS_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: BOS_POLL_QUESTIONS, lotteryTeams: null },
   BKN: { abbr: 'BKN', city: 'Brooklyn', name: 'Nets', fullName: 'Brooklyn Nets', conference: 'East',
     colors: { primary: '#4A4A4A', secondary: '#D4D4D4', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#888888', black: '#000000' },
+    franchiseId: 1610612751,
     coach: 'Jordi Fernandez', gm: 'Sean Marks', arena: 'Barclays Center',
     players: BKN_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: BKN_POLL_QUESTIONS, lotteryTeams: null },
   CHA: { abbr: 'CHA', city: 'Charlotte', name: 'Hornets', fullName: 'Charlotte Hornets', conference: 'East',
     colors: { primary: '#1D1160', secondary: '#00788C', midnight: '#0A0520', deep: '#150D40', light: '#A1A1D5', black: '#000000' },
+    franchiseId: 1610612766,
     coach: 'Charles Lee', gm: 'Jeff Peterson', arena: 'Spectrum Center',
     players: CHA_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: CHA_POLL_QUESTIONS, lotteryTeams: null },
   CHI: { abbr: 'CHI', city: 'Chicago', name: 'Bulls', fullName: 'Chicago Bulls', conference: 'East',
     colors: { primary: '#CE1141', secondary: '#D4D4D4', midnight: '#1A0008', deep: '#2D0010', light: '#FF4466', black: '#000000' },
+    franchiseId: 1610612741,
     coach: 'Billy Donovan', gm: 'Arturas Karnisovas', arena: 'United Center',
     players: CHI_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: CHI_POLL_QUESTIONS, lotteryTeams: null },
   CLE: { abbr: 'CLE', city: 'Cleveland', name: 'Cavaliers', fullName: 'Cleveland Cavaliers', conference: 'East',
     colors: { primary: '#860038', secondary: '#FDBB30', midnight: '#1A000B', deep: '#2D0015', light: '#B8004D', black: '#000000' },
+    franchiseId: 1610612739,
     coach: 'Kenny Atkinson', gm: 'Koby Altman', arena: 'Rocket Mortgage FieldHouse',
     players: CLE_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: CLE_POLL_QUESTIONS, lotteryTeams: null },
   DAL: { abbr: 'DAL', city: 'Dallas', name: 'Mavericks', fullName: 'Dallas Mavericks', conference: 'West',
     colors: { primary: '#00538C', secondary: '#B8C4CA', midnight: '#001020', deep: '#002040', light: '#0080D0', black: '#000000' },
+    franchiseId: 1610612742,
     coach: 'Jason Kidd', gm: 'Nico Harrison', arena: 'American Airlines Center',
     players: DAL_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: DAL_POLL_QUESTIONS, lotteryTeams: null },
   DEN: { abbr: 'DEN', city: 'Denver', name: 'Nuggets', fullName: 'Denver Nuggets', conference: 'West',
     colors: { primary: '#0E2240', secondary: '#FEC524', midnight: '#050E1A', deep: '#0A1A30', light: '#1D4477', black: '#000000' },
+    franchiseId: 1610612743,
     coach: 'Michael Malone', gm: 'Calvin Booth', arena: 'Ball Arena',
     players: DEN_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: DEN_POLL_QUESTIONS, lotteryTeams: null },
   DET: { abbr: 'DET', city: 'Detroit', name: 'Pistons', fullName: 'Detroit Pistons', conference: 'East',
     colors: { primary: '#C8102E', secondary: '#1D42BA', midnight: '#0A0010', deep: '#1A0020', light: '#FF4455', black: '#000000' },
+    franchiseId: 1610612765,
     coach: 'J.B. Bickerstaff', gm: 'Trajan Langdon', arena: 'Little Caesars Arena',
     players: DET_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: DET_POLL_QUESTIONS, lotteryTeams: null },
   GSW: { abbr: 'GSW', city: 'Golden State', name: 'Warriors', fullName: 'Golden State Warriors', conference: 'West',
     colors: { primary: '#1D428A', secondary: '#FFC72C', midnight: '#0A1020', deep: '#102050', light: '#3366CC', black: '#000000' },
+    franchiseId: 1610612744,
     coach: 'Steve Kerr', gm: 'Mike Dunleavy Jr.', arena: 'Chase Center',
     players: GSW_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: GSW_POLL_QUESTIONS, lotteryTeams: null },
   HOU: { abbr: 'HOU', city: 'Houston', name: 'Rockets', fullName: 'Houston Rockets', conference: 'West',
     colors: { primary: '#CE1141', secondary: '#C4CED4', midnight: '#1A0008', deep: '#2D0010', light: '#FF3355', black: '#000000' },
+    franchiseId: 1610612745,
     coach: 'Ime Udoka', gm: 'Rafael Stone', arena: 'Toyota Center',
     players: HOU_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: HOU_POLL_QUESTIONS, lotteryTeams: null },
   IND: { abbr: 'IND', city: 'Indiana', name: 'Pacers', fullName: 'Indiana Pacers', conference: 'East',
     colors: { primary: '#002D62', secondary: '#FDBB30', midnight: '#001020', deep: '#001840', light: '#0055AA', black: '#000000' },
+    franchiseId: 1610612754,
     coach: 'Rick Carlisle', gm: 'Chad Buchanan', arena: 'Gainbridge Fieldhouse',
     players: IND_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: IND_POLL_QUESTIONS, lotteryTeams: null },
   LAC: { abbr: 'LAC', city: 'LA', name: 'Clippers', fullName: 'LA Clippers', conference: 'West',
     colors: { primary: '#C8102E', secondary: '#1D428A', midnight: '#1A0008', deep: '#2D0010', light: '#FF3050', black: '#000000' },
+    franchiseId: 1610612746,
     coach: 'Tyronn Lue', gm: 'Lawrence Frank', arena: 'Intuit Dome',
     players: LAC_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: LAC_POLL_QUESTIONS, lotteryTeams: null },
   LAL: { abbr: 'LAL', city: 'Los Angeles', name: 'Lakers', fullName: 'Los Angeles Lakers', conference: 'West',
     colors: { primary: '#552583', secondary: '#FDB927', midnight: '#150A20', deep: '#2A1040', light: '#7B3FBB', black: '#000000' },
+    franchiseId: 1610612747,
     coach: 'JJ Redick', gm: 'Rob Pelinka', arena: 'Crypto.com Arena',
     players: LAL_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: LAL_POLL_QUESTIONS, lotteryTeams: null },
   MEM: { abbr: 'MEM', city: 'Memphis', name: 'Grizzlies', fullName: 'Memphis Grizzlies', conference: 'West',
     colors: { primary: '#5D76A9', secondary: '#12173F', midnight: '#0A0E20', deep: '#101838', light: '#7B94CC', black: '#000000' },
+    franchiseId: 1610612763,
     coach: 'Taylor Jenkins', gm: 'Zach Kleiman', arena: 'FedExForum',
     players: MEM_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: MEM_POLL_QUESTIONS, lotteryTeams: null },
   MIA: { abbr: 'MIA', city: 'Miami', name: 'Heat', fullName: 'Miami Heat', conference: 'East',
     colors: { primary: '#98002E', secondary: '#F9A01B', midnight: '#1A0008', deep: '#2D0010', light: '#CC0044', black: '#000000' },
+    franchiseId: 1610612748,
     coach: 'Erik Spoelstra', gm: 'Andy Elisburg', arena: 'Kaseya Center',
     players: MIA_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: MIA_POLL_QUESTIONS, lotteryTeams: null },
   MIL: { abbr: 'MIL', city: 'Milwaukee', name: 'Bucks', fullName: 'Milwaukee Bucks', conference: 'East',
     colors: { primary: '#00471B', secondary: '#EEE1C6', midnight: '#001A0A', deep: '#002E14', light: '#007A33', black: '#000000' },
+    franchiseId: 1610612749,
     coach: 'Doc Rivers', gm: 'Jon Horst', arena: 'Fiserv Forum',
     players: MIL_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: MIL_POLL_QUESTIONS, lotteryTeams: null },
   MIN: { abbr: 'MIN', city: 'Minnesota', name: 'Timberwolves', fullName: 'Minnesota Timberwolves', conference: 'West',
     colors: { primary: '#0C2340', secondary: '#236192', midnight: '#050E1A', deep: '#0A1A30', light: '#1D4477', black: '#000000' },
+    franchiseId: 1610612750,
     coach: 'Chris Finch', gm: 'Tim Connelly', arena: 'Target Center',
     players: MIN_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: MIN_POLL_QUESTIONS, lotteryTeams: null },
   NOP: { abbr: 'NOP', city: 'New Orleans', name: 'Pelicans', fullName: 'New Orleans Pelicans', conference: 'West',
     colors: { primary: '#0C2340', secondary: '#C8102E', midnight: '#050E1A', deep: '#0A1A30', light: '#1D4477', black: '#000000' },
+    franchiseId: 1610612740,
     coach: 'Willie Green', gm: 'Trajan Langdon', arena: 'Smoothie King Center',
     players: NOP_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: NOP_POLL_QUESTIONS, lotteryTeams: null },
   NYK: { abbr: 'NYK', city: 'New York', name: 'Knicks', fullName: 'New York Knicks', conference: 'East',
     colors: { primary: '#006BB6', secondary: '#F58426', midnight: '#001530', deep: '#002550', light: '#3399DD', black: '#000000' },
+    franchiseId: 1610612752,
     coach: 'Doug Christie', gm: 'Leon Rose', arena: 'Madison Square Garden',
     players: NYK_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: NYK_POLL_QUESTIONS, lotteryTeams: null },
   OKC: { abbr: 'OKC', city: 'Oklahoma City', name: 'Thunder', fullName: 'Oklahoma City Thunder', conference: 'West',
     colors: { primary: '#007AC1', secondary: '#EF6100', midnight: '#001525', deep: '#002545', light: '#33AAEE', black: '#000000' },
+    franchiseId: 1610612760,
     coach: 'Mark Daigneault', gm: 'Sam Presti', arena: 'Paycom Center',
     players: OKC_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: OKC_POLL_QUESTIONS, lotteryTeams: null },
   ORL: { abbr: 'ORL', city: 'Orlando', name: 'Magic', fullName: 'Orlando Magic', conference: 'East',
     colors: { primary: '#0077C0', secondary: '#C4CED4', midnight: '#001530', deep: '#002550', light: '#33AADD', black: '#000000' },
+    franchiseId: 1610612753,
     coach: 'Jamahl Mosley', gm: 'Jeff Weltman', arena: 'Kia Center',
     players: ORL_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: ORL_POLL_QUESTIONS, lotteryTeams: null },
   PHI: { abbr: 'PHI', city: 'Philadelphia', name: '76ers', fullName: 'Philadelphia 76ers', conference: 'East',
     colors: { primary: '#006BB6', secondary: '#ED174C', midnight: '#001530', deep: '#002550', light: '#3399DD', black: '#000000' },
+    franchiseId: 1610612755,
     coach: 'Nick Nurse', gm: 'Daryl Morey', arena: 'Wells Fargo Center',
     players: PHI_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: PHI_POLL_QUESTIONS, lotteryTeams: null },
   PHX: { abbr: 'PHX', city: 'Phoenix', name: 'Suns', fullName: 'Phoenix Suns', conference: 'West',
     colors: { primary: '#1D1160', secondary: '#E56020', midnight: '#0A0520', deep: '#150D40', light: '#4433AA', black: '#000000' },
+    franchiseId: 1610612756,
     coach: 'Jordan Ott', gm: 'James Jones', arena: 'Footprint Center',
     players: PHX_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: PHX_POLL_QUESTIONS, lotteryTeams: null },
   POR: { abbr: 'POR', city: 'Portland', name: 'Trail Blazers', fullName: 'Portland Trail Blazers', conference: 'West',
     colors: { primary: '#E03A3E', secondary: '#D4D4D4', midnight: '#1A0008', deep: '#2D0010', light: '#FF6666', black: '#000000' },
+    franchiseId: 1610612757,
     coach: 'Chauncey Billups', gm: 'Joe Cronin', arena: 'Moda Center',
     players: POR_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: POR_POLL_QUESTIONS, lotteryTeams: null },
   SAC: { abbr: 'SAC', city: 'Sacramento', name: 'Kings', fullName: 'Sacramento Kings', conference: 'West',
     colors: { primary: '#5A2D81', secondary: '#63727A', midnight: '#150A20', deep: '#2A1040', light: '#7B44AA', black: '#000000' },
+    franchiseId: 1610612758,
     coach: 'Doug Christie', gm: 'Monte McNair', arena: 'Golden 1 Center',
     players: SAC_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: SAC_POLL_QUESTIONS, lotteryTeams: null },
   SAS: { abbr: 'SAS', city: 'San Antonio', name: 'Spurs', fullName: 'San Antonio Spurs', conference: 'West',
     colors: { primary: '#8D9093', secondary: '#D4D4D4', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#C4CED4', black: '#000000' },
+    franchiseId: 1610612759,
     coach: 'Mitch Johnson', gm: 'Brian Wright', arena: 'Frost Bank Center',
     players: SAS_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: SAS_POLL_QUESTIONS, lotteryTeams: null },
   TOR: { abbr: 'TOR', city: 'Toronto', name: 'Raptors', fullName: 'Toronto Raptors', conference: 'East',
     colors: { primary: '#CE1141', secondary: '#A1A1A1', midnight: '#1A0008', deep: '#2D0010', light: '#FF3355', black: '#000000' },
+    franchiseId: 1610612761,
     coach: 'Darko Rajakovic', gm: 'Masai Ujiri', arena: 'Scotiabank Arena',
     players: TOR_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: TOR_POLL_QUESTIONS, lotteryTeams: null },
   UTA: { abbr: 'UTA', city: 'Utah', name: 'Jazz', fullName: 'Utah Jazz', conference: 'West',
     colors: { primary: '#4E008E', secondary: '#79A3DC', midnight: '#0A0014', deep: '#1A0030', light: '#7B2FBF', black: '#000000' },
+    franchiseId: 1610612762,
     coach: 'Will Hardy', gm: 'Danny Ainge', arena: 'Delta Center',
     players: JAZZ_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: JAZZ_POLL_QUESTIONS, lotteryTeams: JAZZ_LOTTERY_TEAMS },
   WAS: { abbr: 'WAS', city: 'Washington', name: 'Wizards', fullName: 'Washington Wizards', conference: 'East',
     colors: { primary: '#002B5C', secondary: '#E31837', midnight: '#001020', deep: '#001840', light: '#0055AA', black: '#000000' },
+    franchiseId: 1610612764,
     coach: 'Brian Keefe', gm: 'Will Dawkins', arena: 'Capital One Arena',
     players: WAS_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: WAS_POLL_QUESTIONS, lotteryTeams: null },
 };
@@ -6774,6 +6804,40 @@ function RosterSection() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {bench.map(p => <PlayerTile key={p.name} player={p} />)}
       </div>
+
+      {/* Jersey Collection */}
+      <div className="mt-14 mb-6">
+        <h2 className="text-2xl font-bold text-center mb-2">
+          <span className="text-team-secondary">2025-26</span> JERSEYS
+        </h2>
+        <p className="text-center text-gray-400 mb-6 text-sm">Official Nike NBA uniform collection</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          {[
+            { name: 'Association', desc: 'Home white', color: '#FFFFFF', textColor: 'text-gray-900' },
+            { name: 'Icon', desc: 'Team primary', color: 'var(--team-primary)', textColor: 'text-white' },
+            { name: 'Statement', desc: 'Alternate bold', color: 'var(--team-deep)', textColor: 'text-white' },
+            { name: 'City Edition', desc: '2025-26 Nike City', color: 'var(--team-midnight)', textColor: 'text-white' },
+          ].map((j, i) => (
+            <div key={i} className="glass rounded-2xl overflow-hidden group hover:scale-105 transition-all cursor-pointer">
+              <div className="h-40 flex items-center justify-center relative" style={{ background: j.color }}>
+                {config.franchiseId && (
+                  <img src={`https://cdn.nba.com/logos/nba/${config.franchiseId}/primary/L/logo.svg`}
+                    alt="" className="w-16 h-16 opacity-30 group-hover:opacity-60 transition-opacity" loading="lazy" />
+                )}
+                <div className="absolute bottom-2 left-0 right-0 text-center">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${j.textColor} bg-black/20`}>{j.name.toUpperCase()}</span>
+                </div>
+              </div>
+              <div className="p-3 text-center">
+                <div className="text-sm font-bold text-white">{j.name}</div>
+                <div className="text-xs text-gray-400">{j.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-gray-600 text-xs mt-4">Jersey designs are property of Nike and the NBA. City Edition designs for 2025-26 feature community-inspired themes unique to each market.</p>
+      </div>
+
       <ScoutingPanel player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </section>
   );
@@ -6807,59 +6871,63 @@ function DraftRoom() {
 
   return (
     <section className="py-12 px-4 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="rounded-2xl p-6 mb-8 text-center border-2 border-team-secondary/40" style={{ background: 'linear-gradient(135deg, rgba(var(--team-primary-rgb),0.4) 0%, rgba(var(--team-midnight-rgb),0.9) 50%, rgba(var(--team-primary-rgb),0.4) 100%)' }}>
-        <h2 className="text-3xl font-black text-team-secondary">2026 NBA DRAFT</h2>
-        <p className="text-gray-300 mt-2">NBA Draft Lottery: May 10, 2026 &bull; NBA Draft: June 25, 2026</p>
-        {(() => {
-          const lt = teamData.lotteryTeams;
-          const teamEntry = lt.find(t => t.team.includes(config.abbr) || t.team.includes(config.name.toUpperCase()));
-          const inLottery = !!teamEntry;
-          const teamIdx = teamEntry ? lt.indexOf(teamEntry) : -1;
+      {/* Header */}
+      <h2 className="text-3xl font-black text-center mb-2">
+        <span className="text-team-secondary">2026</span> NBA DRAFT
+      </h2>
+      <p className="text-center text-gray-400 text-sm mb-6">NBA Draft Lottery: May 10 &bull; NBA Draft: June 25</p>
 
-          if (inLottery) {
-            const pickLow = Math.max(1, teamIdx - 1);
-            const pickHigh = Math.min(14, teamIdx + 4);
-            return (
-            <div className="flex justify-center gap-4 mt-4 flex-wrap">
-              <div className="rounded-lg px-5 py-3 border border-team-secondary/30" style={{ background: 'rgba(var(--team-secondary-rgb),0.08)' }}>
-                <div className="text-team-secondary font-bold text-xl">#{pickLow} – #{pickHigh}</div>
-                <div className="text-xs text-gray-400">Projected Pick Range</div>
-              </div>
-              <div className="rounded-lg px-5 py-3 border border-team-secondary/30" style={{ background: 'rgba(var(--team-secondary-rgb),0.08)' }}>
-                <div className="text-team-secondary font-bold text-xl">{teamEntry.odds}%</div>
-                <div className="text-xs text-gray-400">Lottery Odds (#1 Pick)</div>
-              </div>
-              <div className="rounded-lg px-5 py-3 border border-team-secondary/30" style={{ background: 'rgba(var(--team-secondary-rgb),0.08)' }}>
-                <div className="text-team-secondary font-bold text-xl">{teamEntry.record}</div>
-                <div className="text-xs text-gray-400">{config.name} Record</div>
-              </div>
-            </div>);
-          }
+      {/* Featured Section Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <button onClick={() => setDraftView('board')}
+          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'board' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
+          <div className="text-3xl mb-3">📋</div>
+          <h3 className="text-lg font-black text-team-secondary">Big Board</h3>
+          <p className="text-xs text-gray-400 mt-1">25 top prospects ranked with {config.name} fit analysis, scouting reports, and NBA comparisons</p>
+          <div className="mt-3 flex gap-2">
+            {prospects.slice(0, 3).map(p => (
+              <span key={p.rank} className="text-[10px] px-2 py-0.5 rounded-full glass text-gray-300">#{p.rank} {p.name.split(' ').pop()}</span>
+            ))}
+          </div>
+        </button>
 
-          return (
-          <div className="flex justify-center gap-4 mt-4 flex-wrap">
-            <div className="rounded-lg px-5 py-3 border border-green-500/30" style={{ background: 'rgba(16,185,129,0.08)' }}>
-              <div className="text-green-400 font-bold text-xl">Playoff Team</div>
-              <div className="text-xs text-gray-400">{config.name} Status</div>
-            </div>
-            <div className="rounded-lg px-5 py-3 border border-team-secondary/30" style={{ background: 'rgba(var(--team-secondary-rgb),0.08)' }}>
-              <div className="text-team-secondary font-bold text-xl">No Lottery Pick</div>
-              <div className="text-xs text-gray-400">2026 Draft</div>
-            </div>
-            <div className="rounded-lg px-5 py-3 border border-team-secondary/30" style={{ background: 'rgba(var(--team-secondary-rgb),0.08)' }}>
-              <div className="text-team-secondary font-bold text-xl">Late 1st / 2nd</div>
-              <div className="text-xs text-gray-400">Projected Pick Range</div>
-            </div>
-          </div>);
-        })()}
+        <button onClick={() => setDraftView('mock')}
+          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'mock' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
+          <div className="text-3xl mb-3">🎰</div>
+          <h3 className="text-lg font-black text-team-secondary">Mock Draft Simulator</h3>
+          <p className="text-xs text-gray-400 mt-1">Run the lottery, watch picks unfold in real time, and select your {config.name} pick</p>
+          {(() => {
+            const lt = teamData.lotteryTeams;
+            const te = lt.find(t => t.team.includes(config.abbr) || t.team.includes(config.name.toUpperCase()));
+            return te ? (
+              <div className="mt-3 flex gap-2 text-[10px]">
+                <span className="px-2 py-0.5 rounded-full glass text-team-secondary">{te.odds}% lottery odds</span>
+                <span className="px-2 py-0.5 rounded-full glass text-gray-300">{te.record}</span>
+              </div>
+            ) : (
+              <div className="mt-3"><span className="text-[10px] px-2 py-0.5 rounded-full glass text-green-400">Playoff Team</span></div>
+            );
+          })()}
+        </button>
+
+        <button onClick={() => setDraftView('intel')}
+          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'intel' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
+          <div className="text-3xl mb-3">🔍</div>
+          <h3 className="text-lg font-black text-team-secondary">Draft Intel</h3>
+          <p className="text-xs text-gray-400 mt-1">{config.name} positional needs, best fits, full lottery odds breakdown, and trade asset analysis</p>
+          <div className="mt-3 flex gap-2 text-[10px]">
+            {posNeeds.slice(0, 2).map((n, i) => (
+              <span key={i} className="px-2 py-0.5 rounded-full glass text-gray-300">{n.pos}: {n.need}/10</span>
+            ))}
+          </div>
+        </button>
       </div>
 
-      {/* Draft sub-navigation */}
+      {/* Sub-navigation pills (for quick switching) */}
       <div className="flex justify-center gap-2 mb-6">
-        {[['board', 'Big Board'], ['mock', 'Mock Draft Simulator'], ['intel', 'Draft Intel']].map(([key, label]) => (
+        {[['board', 'Big Board'], ['mock', 'Mock Draft'], ['intel', 'Intel']].map(([key, label]) => (
           <button key={key} onClick={() => setDraftView(key)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${draftView === key ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${draftView === key ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
             {label}
           </button>
         ))}
@@ -8834,7 +8902,11 @@ function App() {
       <header className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, var(--team-deep), var(--team-midnight))' }}>
         <Particles />
         <HeroBg />
-        <div className="relative z-10 text-center py-10 px-4">
+        <div className="relative z-10 text-center py-8 px-4">
+          {config.franchiseId && (
+            <img src={`https://cdn.nba.com/logos/nba/${config.franchiseId}/primary/L/logo.svg`}
+              alt={`${config.fullName} logo`} className="w-20 h-20 mx-auto mb-3 drop-shadow-lg" loading="lazy" />
+          )}
           <h1 className="text-4xl md:text-5xl font-black tracking-tight">
             <span className="text-team-secondary">{config.city.toUpperCase()}</span> <span className="text-white">{config.name.toUpperCase()}</span>
           </h1>
