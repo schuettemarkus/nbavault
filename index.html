@@ -6,7 +6,7 @@
 <meta name="description" content="NBA Vault — Roster, Draft, Trades, Lineups, and Fan engagement for all 30 NBA teams" />
 <meta name="referrer" content="no-referrer" />
 <title>NBA Vault</title>
-<link rel="preconnect" href="https://cdn.nba.com" crossorigin />
+<link rel="preconnect" href="https://cdn.nba.com" />
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="dns-prefetch" href="https://unpkg.com" />
@@ -8382,7 +8382,7 @@ function DraftSimulator() {
 
           {simState === 'simulating' && (
             <div className="text-center py-6">
-              <div className="text-team-secondary font-bold animate-pulse">Picks {picks.length + 1}–{jazzPickNum - 1} loading...</div>
+              <div className="text-team-secondary font-bold animate-pulse">Picks {picks.length + 1}–{teamPickNum - 1} loading...</div>
             </div>
           )}
 
