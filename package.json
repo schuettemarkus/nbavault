@@ -1,0 +1,24 @@
+{
+  "name": "jazzketball",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schuettemarkus/jazzketball.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/schuettemarkus/jazzketball/issues"
+  },
+  "homepage": "https://github.com/schuettemarkus/jazzketball#readme",
+  "devDependencies": {
+    "jest": "^30.3.0"
+  }
+}

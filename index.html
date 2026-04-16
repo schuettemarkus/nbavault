@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="NBA Season Hub — Roster, Draft, Trades, Lineups, and Fan engagement for all 30 NBA teams" />
+<meta name="referrer" content="no-referrer" />
 <title>NBA Season Hub</title>
+<link rel="preconnect" href="https://cdn.nba.com" crossorigin />
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="dns-prefetch" href="https://unpkg.com" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -29,7 +35,7 @@ tailwind.config = {
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 :root {
   --team-primary: #4E008E;
   --team-secondary: #79A3DC;
@@ -57,7 +63,7 @@ body { font-family: 'Inter', sans-serif; background: var(--team-midnight); color
 @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(400px) rotate(720deg); opacity: 0; } }
 .animate-slide-in { animation: slide-in-right 0.4s ease-out; }
 .animate-fade-in { animation: fade-in 0.5s ease-out; }
-.pulse-secondary { animation: pulse-secondary 2s infinite; }
+.pulse-secondary { animation: pulse-secondary 2s infinite; will-change: box-shadow; }
 .pulse-dot { animation: pulse-dot 2s infinite; }
 .shimmer { background: linear-gradient(90deg, transparent, rgba(var(--team-secondary-rgb),0.1), transparent); background-size: 200% 100%; animation: shimmer 3s infinite; }
 .glass { background: rgba(var(--team-primary-rgb),0.12); backdrop-filter: blur(10px); border: 1px solid rgba(var(--team-primary-rgb),0.25); }
@@ -1026,7 +1032,7 @@ const TEAM_BG_MAP = {
   SAC: 'skyline', SAS: 'desert', TOR: 'skyline', UTA: 'UTA', WAS: 'skyline',
 };
 
-function HeroBg() {
+const HeroBg = React.memo(function HeroBg() {
   const { config } = useTeam();
   const bgKey = TEAM_BG_MAP[config.abbr] || 'skyline';
   const renderer = TEAM_BACKGROUNDS[bgKey] || TEAM_BACKGROUNDS.skyline;
@@ -1034,11 +1040,11 @@ function HeroBg() {
     'rgba(var(--team-primary-rgb),0.3)',
     'rgba(var(--team-primary-rgb),0.5)'
   );
-}
+});
 
 // Floating Particles
 function Particles() {
-  const particles = useMemo(() => Array.from({length: 30}, (_, i) => ({
+  const particles = useMemo(() => Array.from({length: 15}, (_, i) => ({
     id: i,
     left: Math.random() * 100,
     delay: Math.random() * 8,
@@ -1053,7 +1059,8 @@ function Particles() {
           left: `${p.left}%`, bottom: '-10px',
           width: p.size, height: p.size,
           background: `rgba(var(--team-secondary-rgb),${p.opacity})`,
-          animation: `float-particle ${p.duration}s ${p.delay}s infinite linear`
+          animation: `float-particle ${p.duration}s ${p.delay}s infinite linear`,
+          willChange: 'transform'
         }} />
       ))}
     </div>
@@ -1299,14 +1306,14 @@ function RosterSection() {
         {player.headshot ? (
           large ? (
             <div className="w-full h-48 overflow-hidden rounded-t-xl mb-3 relative" style={{ background: 'linear-gradient(180deg, var(--team-deep) 0%, var(--team-midnight) 100%)' }}>
-              <img src={player.headshot} alt={player.name}
+              <img src={player.headshot} alt={player.name} loading="lazy"
                 className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-110"
                 style={{ objectPosition: 'top center' }} />
               <div className="absolute bottom-0 left-0 right-0 h-16" style={{ background: 'linear-gradient(transparent, rgba(var(--team-deep-rgb),0.95))' }} />
             </div>
           ) : (
             <div className="w-14 h-14 rounded-full overflow-hidden mt-2 border-2 border-team-primary/40" style={{ background: 'linear-gradient(180deg, var(--team-deep) 0%, var(--team-midnight) 100%)' }}>
-              <img src={player.headshot} alt={player.name}
+              <img src={player.headshot} alt={player.name} loading="lazy"
                 className="w-full h-full object-cover object-top" />
             </div>
           )
@@ -2391,6 +2398,7 @@ function TradeMachine() {
   const [incoming, setIncoming] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [apiKey, setApiKey] = useState('');
 
   const toggleTeamPlayer = (name) => {
     setTeamOut(prev => prev.includes(name) ? prev.filter(n => n !== name) : prev.length < 2 ? [...prev, name] : prev);
@@ -2400,11 +2408,14 @@ function TradeMachine() {
 
   const analyzeTrade = async () => {
     if (!teamOut.length || !incoming.trim()) return;
+    const key = apiKey || prompt('Enter your Anthropic API key:');
+    if (!key) return;
+    if (!apiKey) setApiKey(key);
     setLoading(true);
     try {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': prompt('Enter your Anthropic API key:'), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           system: `You are an NBA trade analyst. Evaluate trades for the ${config.fullName}. Current core: ${coreStr}. Head coach: ${config.coach}. GM: ${config.gm}. Be specific and analytical. Format: Start with a letter grade (A+ to F), then 3 bullet points for the trade, then 3 bullet points against. End with a ${config.gm} Approval rating (1-10).`,
@@ -2457,12 +2468,17 @@ function TradeMachine() {
           <div className="mt-6 glass rounded-xl p-4 animate-fade-in">
             <h3 className="text-sm font-bold text-team-secondary mb-3">AI TRADE ANALYSIS</h3>
             <div className="text-sm text-gray-300 leading-relaxed space-y-2"
-              dangerouslySetInnerHTML={{ __html: analysis
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-team-secondary font-semibold">$1</strong>')
-                .replace(/\n\n/g, '</p><p class="mt-2">')
-                .replace(/\n- /g, '<br/>\u2022 ')
-                .replace(/\n/g, '<br/>')
-              }} />
+              dangerouslySetInnerHTML={{ __html: (() => {
+                // Sanitize: escape HTML entities first, then apply safe formatting
+                const escaped = analysis
+                  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                return escaped
+                  .replace(/\*\*(.*?)\*\*/g, '<strong class="text-team-secondary font-semibold">$1</strong>')
+                  .replace(/\n\n/g, '</p><p class="mt-2">')
+                  .replace(/\n- /g, '<br/>\u2022 ')
+                  .replace(/\n/g, '<br/>');
+              })() }} />
           </div>
         )}
       </div>
@@ -2627,7 +2643,7 @@ function DraftSimulator() {
             <div className="animate-fade-in">
               {showConfetti && (
                 <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                  {Array.from({length: 40}, (_, i) => (
+                  {Array.from({length: 20}, (_, i) => (
                     <div key={i} className="absolute" style={{
                       left: `${Math.random() * 100}%`, top: '-20px',
                       width: 10, height: 10, borderRadius: Math.random() > 0.5 ? '50%' : '0',
@@ -2878,6 +2894,7 @@ function WikiPage() {
               { name: 'localStorage', desc: 'Client-side persistence for team preference, poll votes, fan map data, and session state' },
               { name: 'Geolocation API', desc: 'Browser native API for the Fan Map feature — plots visitor locations on an SVG map' },
               { name: 'Claude API (Anthropic)', desc: 'Powers the AI Trade Analyst and AI Chat Scout features — requires user-provided API key', url: 'https://docs.anthropic.com' },
+              { name: 'Jest', desc: '82-test suite covering structure, theming, data integrity, security, and regression — runs automatically via pre-commit hook' },
             ].map((t, i) => (
               <div key={i} className="rounded-xl p-4 border border-team-primary/20" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
                 <div className="flex items-center gap-2 mb-1">
@@ -2918,6 +2935,9 @@ function WikiPage() {
             <p><span className="text-team-secondary font-semibold">Context-Driven:</span> A React Context (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">TeamContext</code>) propagates the active team config, data, and switch function to all child components.</p>
             <p><span className="text-team-secondary font-semibold">URL Routing:</span> Hash-based routing (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">#roster</code>, <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">#draft</code>, etc.) enables shareable deep links to each section.</p>
             <p><span className="text-team-secondary font-semibold">Stub System:</span> Teams without full data get auto-generated rosters, generic poll questions, and placeholder scouting reports — ready to be replaced with real data.</p>
+            <p><span className="text-team-secondary font-semibold">Performance:</span> Lazy-loaded images, memoized components (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">React.memo</code>), GPU-accelerated animations with <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">will-change</code>, preconnect hints, and optimized font loading.</p>
+            <p><span className="text-team-secondary font-semibold">Security:</span> HTML entity escaping on API responses, no embedded API keys, referrer policy, session-only key storage, and XSS-safe rendering patterns.</p>
+            <p><span className="text-team-secondary font-semibold">Testing:</span> 82-test Jest suite covering file structure, CSS theming, all 30 team configs, data integrity, component existence, URL routing, security checks, and poll regression. Runs automatically via Git pre-commit hook.</p>
           </div>
         </div>
 
