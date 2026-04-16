@@ -6877,60 +6877,20 @@ function DraftRoom() {
       </h2>
       <p className="text-center text-gray-400 text-sm mb-6">NBA Draft Lottery: May 10 &bull; NBA Draft: June 25</p>
 
-      {/* Featured Section Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      {/* Navigation Bubbles */}
+      <div className="flex justify-center gap-3 mb-8 flex-wrap">
         <button onClick={() => setDraftView('board')}
-          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'board' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
-          <div className="text-3xl mb-3">📋</div>
-          <h3 className="text-lg font-black text-team-secondary">Big Board</h3>
-          <p className="text-xs text-gray-400 mt-1">25 top prospects ranked with {config.name} fit analysis, scouting reports, and NBA comparisons</p>
-          <div className="mt-3 flex gap-2">
-            {prospects.slice(0, 3).map(p => (
-              <span key={p.rank} className="text-[10px] px-2 py-0.5 rounded-full glass text-gray-300">#{p.rank} {p.name.split(' ').pop()}</span>
-            ))}
-          </div>
+          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all hover:scale-105 ${draftView === 'board' ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/30' : 'glass text-gray-300 hover:text-white hover:border-team-secondary/40'}`}>
+          Big Board
         </button>
-
         <button onClick={() => setDraftView('mock')}
-          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'mock' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
-          <div className="text-3xl mb-3">🎰</div>
-          <h3 className="text-lg font-black text-team-secondary">Mock Draft Simulator</h3>
-          <p className="text-xs text-gray-400 mt-1">Run the lottery, watch picks unfold in real time, and select your {config.name} pick</p>
-          {(() => {
-            const lt = teamData.lotteryTeams;
-            const te = lt.find(t => t.team.includes(config.abbr) || t.team.includes(config.name.toUpperCase()));
-            return te ? (
-              <div className="mt-3 flex gap-2 text-[10px]">
-                <span className="px-2 py-0.5 rounded-full glass text-team-secondary">{te.odds}% lottery odds</span>
-                <span className="px-2 py-0.5 rounded-full glass text-gray-300">{te.record}</span>
-              </div>
-            ) : (
-              <div className="mt-3"><span className="text-[10px] px-2 py-0.5 rounded-full glass text-green-400">Playoff Team</span></div>
-            );
-          })()}
+          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all hover:scale-105 ${draftView === 'mock' ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/30' : 'glass text-gray-300 hover:text-white hover:border-team-secondary/40'}`}>
+          Run Mock Draft
         </button>
-
         <button onClick={() => setDraftView('intel')}
-          className={`glass rounded-2xl p-6 text-left transition-all hover:scale-[1.02] border-2 ${draftView === 'intel' ? 'border-team-secondary/60' : 'border-transparent hover:border-team-primary/30'}`}>
-          <div className="text-3xl mb-3">🔍</div>
-          <h3 className="text-lg font-black text-team-secondary">Draft Intel</h3>
-          <p className="text-xs text-gray-400 mt-1">{config.name} positional needs, best fits, full lottery odds breakdown, and trade asset analysis</p>
-          <div className="mt-3 flex gap-2 text-[10px]">
-            {posNeeds.slice(0, 2).map((n, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full glass text-gray-300">{n.pos}: {n.need}/10</span>
-            ))}
-          </div>
+          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all hover:scale-105 ${draftView === 'intel' ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/30' : 'glass text-gray-300 hover:text-white hover:border-team-secondary/40'}`}>
+          Draft Intel
         </button>
-      </div>
-
-      {/* Sub-navigation pills (for quick switching) */}
-      <div className="flex justify-center gap-2 mb-6">
-        {[['board', 'Big Board'], ['mock', 'Mock Draft'], ['intel', 'Intel']].map(([key, label]) => (
-          <button key={key} onClick={() => setDraftView(key)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${draftView === key ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* MOCK DRAFT VIEW */}
