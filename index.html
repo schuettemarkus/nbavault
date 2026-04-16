@@ -69,6 +69,8 @@ body { font-family: 'Inter', sans-serif; background: var(--team-midnight); color
 .glass { background: rgba(var(--team-primary-rgb),0.12); backdrop-filter: blur(10px); border: 1px solid rgba(var(--team-primary-rgb),0.25); }
 .team-secondary-gradient { background: linear-gradient(135deg, var(--team-secondary), color-mix(in srgb, var(--team-secondary), white 20%), var(--team-secondary)); }
 .team-primary-gradient { background: linear-gradient(135deg, var(--team-midnight), var(--team-primary)); }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 </head>
 <body>
@@ -6081,7 +6083,7 @@ const TEAM_CONFIGS = {
     coach: 'Joe Mazzulla', gm: 'Brad Stevens', arena: 'TD Garden',
     players: BOS_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: BOS_POLL_QUESTIONS, lotteryTeams: null },
   BKN: { abbr: 'BKN', city: 'Brooklyn', name: 'Nets', fullName: 'Brooklyn Nets', conference: 'East',
-    colors: { primary: '#000000', secondary: '#FFFFFF', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#555555', black: '#000000' },
+    colors: { primary: '#4A4A4A', secondary: '#D4D4D4', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#888888', black: '#000000' },
     coach: 'Jordi Fernandez', gm: 'Sean Marks', arena: 'Barclays Center',
     players: BKN_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: BKN_POLL_QUESTIONS, lotteryTeams: null },
   CHA: { abbr: 'CHA', city: 'Charlotte', name: 'Hornets', fullName: 'Charlotte Hornets', conference: 'East',
@@ -6089,7 +6091,7 @@ const TEAM_CONFIGS = {
     coach: 'Charles Lee', gm: 'Jeff Peterson', arena: 'Spectrum Center',
     players: CHA_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: CHA_POLL_QUESTIONS, lotteryTeams: null },
   CHI: { abbr: 'CHI', city: 'Chicago', name: 'Bulls', fullName: 'Chicago Bulls', conference: 'East',
-    colors: { primary: '#CE1141', secondary: '#000000', midnight: '#1A0008', deep: '#2D0010', light: '#FF4466', black: '#000000' },
+    colors: { primary: '#CE1141', secondary: '#D4D4D4', midnight: '#1A0008', deep: '#2D0010', light: '#FF4466', black: '#000000' },
     coach: 'Billy Donovan', gm: 'Arturas Karnisovas', arena: 'United Center',
     players: CHI_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: CHI_POLL_QUESTIONS, lotteryTeams: null },
   CLE: { abbr: 'CLE', city: 'Cleveland', name: 'Cavaliers', fullName: 'Cleveland Cavaliers', conference: 'East',
@@ -6169,7 +6171,7 @@ const TEAM_CONFIGS = {
     coach: 'Jordan Ott', gm: 'James Jones', arena: 'Footprint Center',
     players: PHX_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: PHX_POLL_QUESTIONS, lotteryTeams: null },
   POR: { abbr: 'POR', city: 'Portland', name: 'Trail Blazers', fullName: 'Portland Trail Blazers', conference: 'West',
-    colors: { primary: '#E03A3E', secondary: '#000000', midnight: '#1A0008', deep: '#2D0010', light: '#FF6666', black: '#000000' },
+    colors: { primary: '#E03A3E', secondary: '#D4D4D4', midnight: '#1A0008', deep: '#2D0010', light: '#FF6666', black: '#000000' },
     coach: 'Chauncey Billups', gm: 'Joe Cronin', arena: 'Moda Center',
     players: POR_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: POR_POLL_QUESTIONS, lotteryTeams: null },
   SAC: { abbr: 'SAC', city: 'Sacramento', name: 'Kings', fullName: 'Sacramento Kings', conference: 'West',
@@ -6177,11 +6179,11 @@ const TEAM_CONFIGS = {
     coach: 'Doug Christie', gm: 'Monte McNair', arena: 'Golden 1 Center',
     players: SAC_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: SAC_POLL_QUESTIONS, lotteryTeams: null },
   SAS: { abbr: 'SAS', city: 'San Antonio', name: 'Spurs', fullName: 'San Antonio Spurs', conference: 'West',
-    colors: { primary: '#C4CED4', secondary: '#000000', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#E0E8EE', black: '#000000' },
+    colors: { primary: '#8D9093', secondary: '#D4D4D4', midnight: '#0A0A0A', deep: '#1A1A1A', light: '#C4CED4', black: '#000000' },
     coach: 'Mitch Johnson', gm: 'Brian Wright', arena: 'Frost Bank Center',
     players: SAS_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: SAS_POLL_QUESTIONS, lotteryTeams: null },
   TOR: { abbr: 'TOR', city: 'Toronto', name: 'Raptors', fullName: 'Toronto Raptors', conference: 'East',
-    colors: { primary: '#CE1141', secondary: '#000000', midnight: '#1A0008', deep: '#2D0010', light: '#FF3355', black: '#000000' },
+    colors: { primary: '#CE1141', secondary: '#A1A1A1', midnight: '#1A0008', deep: '#2D0010', light: '#FF3355', black: '#000000' },
     coach: 'Darko Rajakovic', gm: 'Masai Ujiri', arena: 'Scotiabank Arena',
     players: TOR_PLAYERS, prospects: JAZZ_PROSPECTS, pollQuestions: TOR_POLL_QUESTIONS, lotteryTeams: null },
   UTA: { abbr: 'UTA', city: 'Utah', name: 'Jazz', fullName: 'Utah Jazz', conference: 'West',
@@ -6690,16 +6692,27 @@ function RosterSection() {
     return Math.round(((curr - prev) / prev) * 100);
   };
 
-  const StatWithDelta = ({ val, label, prev }) => {
+  // League averages for comparison (2025-26 season)
+  const leagueAvg = { ppg: 14.2, rpg: 5.4, apg: 3.1, fgPct: 46.0, threePct: 36.0 };
+
+  const StatWithDelta = ({ val, label, prev, showComp, compAvg }) => {
+    // Prefer YoY delta if available, otherwise show league comparison for starters
     const delta = prev != null ? pctChange(val, prev) : null;
+    const comp = showComp && compAvg ? Math.round(((val - compAvg) / compAvg) * 100) : null;
+    const displayDelta = delta !== null ? delta : comp;
+    const isUp = displayDelta > 0;
+    const isDown = displayDelta < 0;
     return (
-      <span className="inline-flex items-center gap-0.5">
-        {val} {label}
-        {delta !== null && (
-          <span className={`text-[9px] font-bold ${delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-500'}`}>
-            {delta > 0 ? '+' : ''}{delta}%
-          </span>
-        )}
+      <span className="inline-flex flex-col items-center leading-tight">
+        <span className="flex items-baseline gap-0.5">
+          <span className="font-bold">{val}</span>
+          {displayDelta !== null && (
+            <span className={`text-[8px] font-bold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-gray-500'}`}>
+              {isUp ? '+' : ''}{displayDelta}%
+            </span>
+          )}
+        </span>
+        <span className="text-[9px] text-gray-500">{label}</span>
       </span>
     );
   };
@@ -6735,10 +6748,10 @@ function RosterSection() {
           </h3>
           <p className="text-xs text-gray-400">{player.pos} | #{player.number}</p>
           {(() => { const b = getAutoBadge(player); return b ? <div className="mt-1.5"><Badge type={b} /></div> : null; })()}
-          <div className={`flex gap-3 mt-2 ${large ? 'text-sm' : 'text-xs'} text-gray-400`}>
-            <StatWithDelta val={player.stats.ppg} label="PPG" prev={player.lastYear?.ppg} />
-            <StatWithDelta val={player.stats.rpg} label="RPG" prev={player.lastYear?.rpg} />
-            <StatWithDelta val={player.stats.apg} label="APG" prev={player.lastYear?.apg} />
+          <div className={`flex justify-center gap-3 mt-2 ${large ? 'text-sm' : 'text-xs'} text-gray-400`}>
+            <StatWithDelta val={player.stats.ppg} label="PPG" prev={player.lastYear?.ppg} showComp={player.starter} compAvg={leagueAvg.ppg} />
+            <StatWithDelta val={player.stats.rpg} label="RPG" prev={player.lastYear?.rpg} showComp={player.starter} compAvg={leagueAvg.rpg} />
+            <StatWithDelta val={player.stats.apg} label="APG" prev={player.lastYear?.apg} showComp={player.starter} compAvg={leagueAvg.apg} />
           </div>
           <div className="mt-2"><StreakDots streak={player.streak || []} /></div>
         </div>
@@ -8831,18 +8844,10 @@ function App() {
 
       {/* Sticky Navigation */}
       <nav className="sticky top-0 z-30 border-b border-team-primary/30" style={{ background: 'rgba(var(--team-deep-rgb),0.95)', backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center justify-between py-2.5 px-4">
-          <div className="w-[120px] hidden md:block" />
-          <div className="flex items-center gap-1 flex-wrap justify-center">
-            {tabs.map(tab => (
-              <button key={tab} onClick={() => navigateTo(tab)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${activeTab === tab ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/20' : 'text-gray-400 hover:text-white hover:bg-team-primary/30'}`}>
-                {tab}
-              </button>
-            ))}
-          </div>
+        {/* Top row: team selector (full width on mobile) */}
+        <div className="flex items-center justify-center py-2 px-4 border-b border-team-primary/10">
           <select value={selectedTeam} onChange={e => switchTeam(e.target.value)}
-            className="bg-transparent border border-team-primary/40 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-team-secondary/50" style={{ background: 'var(--team-midnight)' }}>
+            className="bg-transparent border border-team-primary/40 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-team-secondary/50 w-full max-w-xs" style={{ background: 'var(--team-midnight)' }}>
             <optgroup label="Western Conference">
               {westTeams.map(t => <option key={t.abbr} value={t.abbr} style={{ background: '#111' }}>{t.fullName}</option>)}
             </optgroup>
@@ -8850,6 +8855,17 @@ function App() {
               {eastTeams.map(t => <option key={t.abbr} value={t.abbr} style={{ background: '#111' }}>{t.fullName}</option>)}
             </optgroup>
           </select>
+        </div>
+        {/* Bottom row: nav tabs (scrollable on mobile) */}
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex items-center justify-center gap-1 py-2 px-3 min-w-max mx-auto">
+            {tabs.map(tab => (
+              <button key={tab} onClick={() => navigateTo(tab)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === tab ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/20' : 'text-gray-400 hover:text-white hover:bg-team-primary/30'}`}>
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
 
