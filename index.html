@@ -6455,15 +6455,42 @@ function Badge({ type }) {
     'ROOKIE': 'bg-green-600 text-white',
     'ALL-STAR': 'bg-yellow-500 text-black',
     'DPOY': 'bg-red-600 text-white',
+    'MVP': 'bg-amber-500 text-black',
     'RETURNING': 'bg-blue-600 text-white',
-    'NEW ACQUISITION': 'bg-orange-500 text-white'
+    'NEW ACQUISITION': 'bg-orange-500 text-white',
+    'CAPTAIN': 'bg-team-secondary text-black',
+    'VETERAN': 'bg-gray-500 text-white',
+    'SIXTH MAN': 'bg-purple-600 text-white',
+    'STARTER': 'bg-team-primary text-white',
+    'SHARPSHOOTER': 'bg-cyan-600 text-white',
+    'PLAYMAKER': 'bg-indigo-500 text-white',
+    'FLOOR GENERAL': 'bg-indigo-500 text-white',
+    'ANCHOR': 'bg-slate-600 text-white',
+    'BREAKOUT': 'bg-emerald-500 text-white',
   };
   if (!type) return null;
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${styles[type] || 'bg-gray-600 text-white'}`}>
-      {type === 'DPOY' ? '👑 DPOY' : type}
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles[type] || 'bg-gray-600 text-white'}`}>
+      {type}
     </span>
   );
+}
+
+// Auto-assign a contextual badge based on player stats and role
+function getAutoBadge(player) {
+  if (player.badge) return player.badge;
+  const s = player.stats;
+  if (!s) return null;
+  if (s.ppg >= 28) return 'MVP';
+  if (s.ppg >= 22 && player.starter) return 'ALL-STAR';
+  if (s.apg >= 7) return 'FLOOR GENERAL';
+  if (s.threePct >= 39 && s.ppg >= 10) return 'SHARPSHOOTER';
+  if (s.rpg >= 10 && player.starter) return 'ANCHOR';
+  if (s.ppg >= 18 && player.starter) return 'STARTER';
+  if (s.ppg >= 12 && !player.starter) return 'SIXTH MAN';
+  if (s.apg >= 5 && player.starter) return 'PLAYMAKER';
+  if (s.ppg >= 15 && player.starter) return 'BREAKOUT';
+  return null;
 }
 
 // Hot/Cold Streak
@@ -6707,7 +6734,7 @@ function RosterSection() {
             {player.name}
           </h3>
           <p className="text-xs text-gray-400">{player.pos} | #{player.number}</p>
-          {player.badge && <div className="mt-1.5"><Badge type={player.badge} /></div>}
+          {(() => { const b = getAutoBadge(player); return b ? <div className="mt-1.5"><Badge type={b} /></div> : null; })()}
           <div className={`flex gap-3 mt-2 ${large ? 'text-sm' : 'text-xs'} text-gray-400`}>
             <StatWithDelta val={player.stats.ppg} label="PPG" prev={player.lastYear?.ppg} />
             <StatWithDelta val={player.stats.rpg} label="RPG" prev={player.lastYear?.rpg} />
