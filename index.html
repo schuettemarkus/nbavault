@@ -9170,11 +9170,17 @@ function DailyPicks() {
                     <div className="text-[9px] text-gray-500">Opp Pace</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-[10px] text-gray-500">
-                  <span>{detail.ppg} PPG</span>
-                  <span>{detail.rpg} RPG</span>
-                  <span>{detail.apg} APG</span>
-                  {detail.mpg > 0 && <span>{detail.mpg} MPG</span>}
+                <div className="flex items-center gap-2 mt-1">
+                  {[
+                    { label: 'PTS', value: detail.ppg, active: pick.statType === 'PTS' },
+                    { label: 'REB', value: detail.rpg, active: pick.statType === 'REB' },
+                    { label: 'AST', value: detail.apg, active: pick.statType === 'AST' },
+                    ...(detail.mpg > 0 ? [{ label: 'MIN', value: detail.mpg, active: false }] : []),
+                  ].map(s => (
+                    <div key={s.label} className={`px-2.5 py-1 rounded-md text-xs font-bold ${s.active ? 'bg-team-secondary/20 text-team-secondary border border-team-secondary/30' : 'text-gray-500'}`} style={!s.active ? { background: 'rgba(var(--team-primary-rgb),0.06)' } : {}}>
+                      {s.value} <span className="font-normal text-[9px] opacity-70">{s.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -9278,8 +9284,16 @@ function DailyPicks() {
                       <div className="text-[8px] text-gray-500">Pace</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-[9px] text-gray-500">
-                    <span>{detail.ppg} PPG</span><span>{detail.rpg} RPG</span><span>{detail.apg} APG</span>
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { label: 'PTS', value: detail.ppg, active: pick.statType === 'PTS' },
+                      { label: 'REB', value: detail.rpg, active: pick.statType === 'REB' },
+                      { label: 'AST', value: detail.apg, active: pick.statType === 'AST' },
+                    ].map(s => (
+                      <div key={s.label} className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.active ? 'bg-team-secondary/20 text-team-secondary border border-team-secondary/30' : 'text-gray-500'}`} style={!s.active ? { background: 'rgba(var(--team-primary-rgb),0.06)' } : {}}>
+                        {s.value} <span className="font-normal text-[8px] opacity-70">{s.label}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
