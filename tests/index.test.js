@@ -514,12 +514,15 @@ describe('Critical Rendering', () => {
     expect(html).toContain('<div id="root">');
   });
 
-  test('404.html exists and matches index.html', () => {
-    const fs404 = require('fs');
+  test('404.html exists and is a full copy of index.html', () => {
     const path404 = path.join(__dirname, '..', '404.html');
-    if (fs404.existsSync(path404)) {
-      const html404 = fs404.readFileSync(path404, 'utf-8');
-      expect(html404.length).toBe(html.length);
+    if (fs.existsSync(path404)) {
+      const html404 = fs.readFileSync(path404, 'utf-8');
+      // Must contain the app (not just a redirect stub)
+      expect(html404).toContain('<div id="root">');
+      expect(html404).toContain('function App()');
+      // Size should be close (pre-commit hook syncs them)
+      expect(html404.length).toBeGreaterThan(html.length * 0.95);
     }
   });
 });

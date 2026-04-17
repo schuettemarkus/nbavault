@@ -8668,7 +8668,14 @@ function DailyPicks() {
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [sortBy, setSortBy] = useState('edge');
   const [filterStat, setFilterStat] = useState('ALL');
-  const [engine, setEngine] = useState(loadVaultEngine);
+  const [engine, setEngine] = useState(() => {
+    const e = loadVaultEngine();
+    if (!Array.isArray(e.history)) e.history = [];
+    if (!e.accuracy) e.accuracy = { high: { hits: 0, total: 0 }, mid: { hits: 0, total: 0 }, low: { hits: 0, total: 0 } };
+    if (!e.statAccuracy) e.statAccuracy = { PTS: { hits: 0, total: 0 }, REB: { hits: 0, total: 0 }, AST: { hits: 0, total: 0 } };
+    if (!e.weights) e.weights = { recentForm: 1.0, matchup: 1.0, minutes: 1.0, injury: 1.0, homeAway: 1.0, pace: 1.0 };
+    return e;
+  });
   const [expandedPick, setExpandedPick] = useState(null); // pick.id or null
   const [schedule, setSchedule] = useState(null);
   const [loadingGames, setLoadingGames] = useState(true);
@@ -8883,18 +8890,17 @@ function DailyPicks() {
     return { allPicks: picks, todaysGames: games };
   }, [schedule, engine.weights, oddsLines]);
 
-  // Filter and sort
+  const bestPick = useMemo(() => selectBestBet(allPicks), [allPicks]);
+
+  // Filter and sort — exclude Pick of the Day
   const filteredPicks = useMemo(() => {
-    // Exclude Pick of the Day from the table (shown separately above)
     let picks = filterStat === 'ALL' ? allPicks : allPicks.filter(p => p.statType === filterStat);
     if (bestPick) picks = picks.filter(p => p.id !== bestPick.id);
     if (sortBy === 'edge') picks = [...picks].sort((a, b) => b.edge - a.edge);
     else if (sortBy === 'confidence') picks = [...picks].sort((a, b) => b.confidence - a.confidence);
     else if (sortBy === 'line') picks = [...picks].sort((a, b) => b.line - a.line);
     return picks;
-  }, [allPicks, sortBy, filterStat]);
-
-  const bestPick = useMemo(() => selectBestBet(allPicks), [allPicks]);
+  }, [allPicks, sortBy, filterStat, bestPick]);
   const [winTracker, setWinTracker] = useState(loadWinTracker);
   const [parlayLegs, setParlayLegs] = useState(null); // null = auto-select, array = user-modified
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
