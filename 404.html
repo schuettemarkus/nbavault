@@ -8926,34 +8926,38 @@ function DailyPicks() {
 
   const realLineCount = allPicks.filter(p => p.lineSource === 'live').length;
 
-  // Generate last 5 game log for a pick (from player monthly data + seeded variance)
-  function getLast5(pick) {
+  // Get real player data for expanded pick view (season stats + monthly trend)
+  function getPickDetail(pick) {
     const tc = TEAM_CONFIGS[pick.teamAbbr];
     if (!tc || !tc.players) return null;
     const player = tc.players.find(p => p.name === pick.player);
     if (!player || !player.stats) return null;
     const s = player.stats;
-    const seed = pick.player.length * 13 + pick.line * 7;
-    const rng = (i) => { const x = Math.sin(seed * 9301 + i * 49297) * 49297; return x - Math.floor(x); };
-    const opponents = ['BOS','MIA','NYK','CHI','LAL','GSW','PHX','DEN','CLE','MIL'];
-    const games = [];
-    for (let i = 0; i < 5; i++) {
-      const variance = (rng(i) - 0.45) * 8; // slight positive skew
-      const pts = Math.max(0, Math.round(s.ppg + variance));
-      const reb = Math.max(0, Math.round(s.rpg + (rng(i + 50) - 0.5) * 4));
-      const ast = Math.max(0, Math.round(s.apg + (rng(i + 100) - 0.5) * 3));
-      const min = Math.round(30 + rng(i + 200) * 8);
-      const opp = opponents[Math.floor(rng(i + 300) * opponents.length)];
-      const d = new Date(); d.setDate(d.getDate() - (5 - i) * 2 - 1);
-      const statVal = pick.statType === 'PTS' ? pts : pick.statType === 'REB' ? reb : ast;
-      games.push({
-        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        opp, min, pts, reb, ast,
-        hitLine: statVal >= pick.line,
-        statVal,
-      });
-    }
-    return games;
+    const monthly = getMonthly(player);
+    const statKey = pick.statType === 'PTS' ? 'ppg' : pick.statType === 'REB' ? 'rpg' : 'apg';
+    const seasonAvg = s[statKey] || 0;
+
+    // Monthly trend data (real from roster)
+    const months = monthly.length > 0 ? monthly.slice(-6).map(m => ({
+      label: typeof m === 'object' ? (m.month || '').substring(0, 3) : '',
+      value: typeof m === 'object' ? (m[statKey] || m.ppg || 0) : m,
+    })) : [];
+
+    // Over rate: how many monthly periods exceeded the line
+    const overCount = months.filter(m => m.value >= pick.line).length;
+    const overRate = months.length > 0 ? `${overCount}/${months.length}` : '—';
+
+    // Matchup context
+    const oppDefRank = DEF_RATINGS[pick.opponent] || 15;
+    const oppPace = PACE_RATINGS[pick.opponent] || LEAGUE_AVG_PACE;
+
+    return {
+      seasonAvg: +seasonAvg.toFixed(1),
+      ppg: s.ppg, rpg: s.rpg, apg: s.apg, mpg: s.mpg || 0,
+      months, overRate, overCount, totalMonths: months.length,
+      oppDefRank, oppPace,
+      pos: player.pos,
+    };
   }
 
   return (
@@ -9118,7 +9122,7 @@ function DailyPicks() {
           const gameLocked = pick.locked;
           const live = !isPaid ? getLiveStatus(pick, liveStats) : null;
           const isExpanded = expandedPick === pick.id && !isPaid;
-          const last5 = isExpanded ? getLast5(pick) : null;
+          const detail = isExpanded ? getPickDetail(pick) : null;
           return (
             <div key={i} style={isPaid ? { filter: `blur(${blurLevel}px)`, userSelect: 'none', pointerEvents: 'none' } : {}}>
             <div className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${!isPaid ? 'cursor-pointer' : ''} ${isPaid ? '' : gameLocked && !live ? 'opacity-60' : 'hover:bg-team-primary/5'} ${i === 0 && !isPaid ? 'bg-team-secondary/5' : ''} ${isExpanded ? 'bg-team-primary/10' : ''} ${live?.status === 'hit' || live?.status === 'winning' ? 'bg-green-500/[0.04]' : ''} ${live?.status === 'behind' ? 'bg-red-500/[0.02]' : ''}`}
@@ -9157,26 +9161,56 @@ function DailyPicks() {
                 {pick.injury && <span className="text-[9px] text-amber-400 font-bold">&#9888; Injury boost</span>}
               </div>
             </div>
-            {/* Expanded: Last 5 game log */}
-            {isExpanded && last5 && (
+            {/* Expanded: Player detail */}
+            {isExpanded && detail && (
               <div className="px-4 py-3 border-b border-team-primary/10 animate-fade-in" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recent Form</span>
-                  <span className="text-[10px] text-gray-600">Today's line: O {pick.line} {pick.statType}</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div className="text-center rounded-lg p-2" style={{ background: 'rgba(var(--team-primary-rgb),0.08)' }}>
+                    <div className="text-lg font-black text-white">{detail.seasonAvg}</div>
+                    <div className="text-[9px] text-gray-500">Season Avg {pick.statType}</div>
+                  </div>
+                  <div className="text-center rounded-lg p-2" style={{ background: 'rgba(var(--team-primary-rgb),0.08)' }}>
+                    <div className={`text-lg font-black ${detail.overCount >= Math.ceil(detail.totalMonths / 2) ? 'text-green-400' : 'text-red-400'}`}>{detail.overRate}</div>
+                    <div className="text-[9px] text-gray-500">Monthly Over Rate</div>
+                  </div>
+                  <div className="text-center rounded-lg p-2" style={{ background: 'rgba(var(--team-primary-rgb),0.08)' }}>
+                    <div className="text-lg font-black text-red-400">#{detail.oppDefRank}</div>
+                    <div className="text-[9px] text-gray-500">Opp DEF Rank</div>
+                  </div>
+                  <div className="text-center rounded-lg p-2" style={{ background: 'rgba(var(--team-primary-rgb),0.08)' }}>
+                    <div className={`text-lg font-black ${detail.oppPace >= LEAGUE_AVG_PACE ? 'text-green-400' : 'text-gray-400'}`}>{detail.oppPace.toFixed(1)}</div>
+                    <div className="text-[9px] text-gray-500">Opp Pace</div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {last5.map((g, gi) => (
-                    <div key={gi} className={`rounded-lg p-2 text-center text-xs ${g.hitLine ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/5 border border-red-500/10'}`}>
-                      <div className="text-[9px] text-gray-500">{g.date}</div>
-                      <div className="text-[9px] text-gray-600 mb-1">vs {g.opp}</div>
-                      <div className={`text-lg font-black ${g.hitLine ? 'text-green-400' : 'text-red-400'}`}>{g.statVal}</div>
-                      <div className={`text-[9px] font-bold mt-0.5 ${g.statVal >= pick.line ? 'text-green-400' : 'text-red-400'}`}>{g.statVal >= pick.line ? 'OVER' : 'UNDER'}</div>
+                {/* Monthly trend bars */}
+                {detail.months.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Monthly Trend</span>
+                      <span className="text-[10px] text-gray-600">Line: O {pick.line}</span>
                     </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between mt-2 text-[10px]">
-                  <span className="text-gray-500">Over rate: <span className={`font-bold ${last5.filter(g => g.hitLine).length >= 3 ? 'text-green-400' : 'text-red-400'}`}>{last5.filter(g => g.hitLine).length}/5</span></span>
-                  <span className="text-gray-500">Avg: <span className="text-white font-bold">{(last5.reduce((s, g) => s + g.statVal, 0) / 5).toFixed(1)} {pick.statType}</span></span>
+                    <div className="flex items-end gap-1 h-16">
+                      {detail.months.map((m, mi) => {
+                        const max = Math.max(...detail.months.map(x => x.value), pick.line) * 1.1;
+                        const pct = max > 0 ? (m.value / max) * 100 : 0;
+                        const linePct = max > 0 ? (pick.line / max) * 100 : 0;
+                        const isOver = m.value >= pick.line;
+                        return (
+                          <div key={mi} className="flex-1 flex flex-col items-center gap-0.5 relative">
+                            <span className={`text-[9px] font-bold ${isOver ? 'text-green-400' : 'text-red-400'}`}>{m.value.toFixed(1)}</span>
+                            <div className="w-full rounded-t" style={{ height: `${pct}%`, background: isOver ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.2)', minHeight: '4px' }} />
+                            <span className="text-[8px] text-gray-600">{m.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-4 mt-2 text-[10px] text-gray-500">
+                  <span>{detail.ppg} PPG</span>
+                  <span>{detail.rpg} RPG</span>
+                  <span>{detail.apg} APG</span>
+                  {detail.mpg > 0 && <span>{detail.mpg} MPG</span>}
                 </div>
               </div>
             )}
@@ -9186,7 +9220,7 @@ function DailyPicks() {
       </div>
       {/* Unlock overlay — email capture */}
       {filteredPicks.length > FREE_LIMIT && (
-        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pb-6 z-10" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.9) 40%, rgba(var(--team-midnight-rgb),1) 100%)', height: '60%', pointerEvents: 'none' }}>
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center z-10" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.85) 30%, rgba(var(--team-midnight-rgb),1) 100%)', height: '80%', pointerEvents: 'none' }}>
           <div className="text-center max-w-sm mx-auto" style={{ pointerEvents: 'auto' }}>
             <h3 className="text-lg font-black text-white mb-1">Unlock All {filteredPicks.length} Picks</h3>
             <p className="text-gray-400 text-xs mb-3">Get every edge, every day. Enter your email to join the waitlist.</p>
@@ -9216,7 +9250,7 @@ function DailyPicks() {
           const gameLocked = pick.locked;
           const live = !isPaid ? getLiveStatus(pick, liveStats) : null;
           const isExpanded = expandedPick === pick.id && !isPaid;
-          const last5 = isExpanded ? getLast5(pick) : null;
+          const detail = isExpanded ? getPickDetail(pick) : null;
           return (
             <div key={i} className={`glass rounded-xl overflow-hidden ${i === 0 && !isPaid ? 'border border-team-secondary/40' : ''} ${gameLocked && !isPaid && !live ? 'opacity-60' : ''}`}
               style={{
@@ -9259,26 +9293,48 @@ function DailyPicks() {
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
               </div>
-              {/* Expanded: Last 5 game log */}
-              {isExpanded && last5 && (
+              {/* Expanded: Player detail */}
+              {isExpanded && detail && (
                 <div className="px-4 pb-4 animate-fade-in" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
-                  <div className="flex items-center gap-2 mb-2 pt-2 border-t border-team-primary/10">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last 5 Games</span>
-                    <span className="text-[10px] text-gray-600">Line: O {pick.line} {pick.statType}</span>
+                  <div className="grid grid-cols-4 gap-2 mb-3 pt-2 border-t border-team-primary/10">
+                    <div className="text-center">
+                      <div className="text-base font-black text-white">{detail.seasonAvg}</div>
+                      <div className="text-[8px] text-gray-500">Avg {pick.statType}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-base font-black ${detail.overCount >= Math.ceil(detail.totalMonths / 2) ? 'text-green-400' : 'text-red-400'}`}>{detail.overRate}</div>
+                      <div className="text-[8px] text-gray-500">Over Rate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-base font-black text-red-400">#{detail.oppDefRank}</div>
+                      <div className="text-[8px] text-gray-500">DEF Rank</div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-base font-black ${detail.oppPace >= LEAGUE_AVG_PACE ? 'text-green-400' : 'text-gray-400'}`}>{detail.oppPace.toFixed(1)}</div>
+                      <div className="text-[8px] text-gray-500">Pace</div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {last5.map((g, gi) => (
-                      <div key={gi} className={`rounded-lg p-2 text-center ${g.hitLine ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/5 border border-red-500/10'}`}>
-                        <div className="text-[8px] text-gray-500">{g.date}</div>
-                        <div className="text-[8px] text-gray-600">vs {g.opp}</div>
-                        <div className={`text-base font-black ${g.hitLine ? 'text-green-400' : 'text-red-400'}`}>{g.statVal}</div>
-                        <div className={`text-[8px] font-bold ${g.statVal >= pick.line ? 'text-green-400' : 'text-red-400'}`}>{g.statVal >= pick.line ? 'OVER' : 'UNDER'}</div>
+                  {detail.months.length > 0 && (
+                    <div>
+                      <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Monthly Trend vs O {pick.line}</div>
+                      <div className="flex items-end gap-1 h-12">
+                        {detail.months.map((m, mi) => {
+                          const max = Math.max(...detail.months.map(x => x.value), pick.line) * 1.1;
+                          const pct = max > 0 ? (m.value / max) * 100 : 0;
+                          const isOver = m.value >= pick.line;
+                          return (
+                            <div key={mi} className="flex-1 flex flex-col items-center gap-0.5">
+                              <span className={`text-[8px] font-bold ${isOver ? 'text-green-400' : 'text-red-400'}`}>{m.value.toFixed(1)}</span>
+                              <div className="w-full rounded-t" style={{ height: `${pct}%`, background: isOver ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.2)', minHeight: '4px' }} />
+                              <span className="text-[7px] text-gray-600">{m.label}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-[10px]">
-                    <span className="text-gray-500">Over rate: <span className={`font-bold ${last5.filter(g => g.hitLine).length >= 3 ? 'text-green-400' : 'text-red-400'}`}>{last5.filter(g => g.hitLine).length}/5</span></span>
-                    <span className="text-gray-500">Avg: <span className="text-white font-bold">{(last5.reduce((s, g) => s + g.statVal, 0) / 5).toFixed(1)} {pick.statType}</span></span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-[9px] text-gray-500">
+                    <span>{detail.ppg} PPG</span><span>{detail.rpg} RPG</span><span>{detail.apg} APG</span>
                   </div>
                 </div>
               )}
@@ -9288,7 +9344,7 @@ function DailyPicks() {
       </div>
       {/* Unlock overlay — mobile email capture */}
       {filteredPicks.length > FREE_LIMIT && (
-        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pb-6 z-10 px-4" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.9) 40%, rgba(var(--team-midnight-rgb),1) 100%)', height: '70%', pointerEvents: 'none' }}>
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center z-10 px-4" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.85) 30%, rgba(var(--team-midnight-rgb),1) 100%)', height: '85%', pointerEvents: 'none' }}>
           <div className="text-center w-full max-w-sm" style={{ pointerEvents: 'auto' }}>
             <h3 className="text-base font-black text-white mb-1">Unlock All {filteredPicks.length} Picks</h3>
             <p className="text-gray-400 text-xs mb-3">Join the waitlist for full access.</p>
