@@ -9573,7 +9573,10 @@ function WikiPage() {
               { name: 'localStorage', desc: 'Client-side persistence for team preference, poll votes, fan map data, and session state' },
               { name: 'Geolocation API', desc: 'Browser native API for the Fan Map feature — plots visitor locations on an SVG map' },
               { name: 'Claude API (Anthropic)', desc: 'Powers the AI Trade Analyst — provides letter grades, pros/cons, and GM approval ratings (requires user-provided API key)', url: 'https://docs.anthropic.com' },
-              { name: 'Jest', desc: '82-test suite covering structure, theming, data integrity, security, and regression — runs automatically via pre-commit hook' },
+              { name: 'The Odds API', desc: 'Real-time player prop lines from DraftKings and FanDuel — cached locally to minimize API usage', url: 'https://the-odds-api.com' },
+              { name: 'NBA CDN Scoreboard', desc: 'Live game schedule, scores, and box scores via the NBA\'s public CDN endpoint' },
+              { name: 'EmailJS', desc: 'Client-side email delivery for welcome emails with Pick of the Day data', url: 'https://emailjs.com' },
+              { name: 'Jest', desc: '92-test suite covering structure, theming, data integrity, security, and regression — runs automatically via pre-commit hook' },
             ].map((t, i) => (
               <div key={i} className="rounded-xl p-4 border border-team-primary/20" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
                 <div className="flex items-center gap-2 mb-1">
@@ -9591,6 +9594,7 @@ function WikiPage() {
             {[
               { source: 'NBA.com / cdn.nba.com', desc: 'Player headshot images via the official NBA CDN (public, no auth required)' },
               { source: 'Tankathon.com', desc: '2026 NBA Draft lottery odds, team records, and pick probabilities' },
+              { source: 'The Odds API', desc: 'Real sportsbook player prop lines from DraftKings and FanDuel for PTS, REB, AST markets' },
               { source: 'Manual Scouting Data', desc: 'Player stats, radar ratings, scout reports, strengths/weaknesses, and draft prospect analyses are editorially curated' },
               { source: 'OpenStreetMap Nominatim', desc: 'Reverse geocoding API for the Fan Map feature — converts lat/lng coordinates to city/country names' },
               { source: 'Team Color References', desc: 'Official NBA team colors sourced from team brand guidelines and public style guides' },
@@ -9609,14 +9613,15 @@ function WikiPage() {
         <div className="glass rounded-2xl p-6">
           <h3 className="text-lg font-bold text-team-secondary mb-4">Architecture</h3>
           <div className="space-y-3 text-sm text-gray-300">
-            <p><span className="text-team-secondary font-semibold">Single File:</span> The entire application lives in one <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">index.html</code> file (~620KB). No build step, no bundler, no server — hosted for free on GitHub Pages.</p>
+            <p><span className="text-team-secondary font-semibold">Single File:</span> The entire application lives in one <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">index.html</code> file (~730KB). No build step, no bundler, no server — hosted for free on GitHub Pages.</p>
             <p><span className="text-team-secondary font-semibold">30-Team Theming:</span> A <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">TEAM_CONFIGS</code> object holds metadata for all 30 NBA teams. CSS custom properties enable instant color swaps via <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">applyTeamColors()</code>.</p>
             <p><span className="text-team-secondary font-semibold">Context-Driven:</span> A React Context (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">TeamContext</code>) propagates the active team config, data, and switch function to all child components.</p>
             <p><span className="text-team-secondary font-semibold">URL Routing:</span> Clean URL routing (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/roster</code>, <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/draft</code>, etc.) with History API enables shareable deep links to each section.</p>
             <p><span className="text-team-secondary font-semibold">Full 30-Team Data:</span> All 30 teams have real rosters (12 players each, 360 total) with names, stats, headshots, scout reports, strengths/weaknesses, player comparisons, ceiling projections, and monthly trends. Each team has 25 custom poll questions. Draft prospects use shared data with per-team fit scoring.</p>
             <p><span className="text-team-secondary font-semibold">Performance:</span> Lazy-loaded images, memoized components (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">React.memo</code>), GPU-accelerated animations with <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">will-change</code>, preconnect hints, and optimized font loading.</p>
-            <p><span className="text-team-secondary font-semibold">Security:</span> HTML entity escaping on API responses, no embedded API keys, referrer policy, session-only key storage, and XSS-safe rendering patterns.</p>
-            <p><span className="text-team-secondary font-semibold">Testing:</span> 82-test Jest suite covering file structure, CSS theming, all 30 team configs, data integrity, component existence, URL routing, security checks, and poll regression. Runs automatically via Git pre-commit hook.</p>
+            <p><span className="text-team-secondary font-semibold">Betting Engine:</span> 7-factor projection model (matchup, pace, form, home/away, injury, minutes, edge decay) with Bayesian self-calibration. Real sportsbook lines from The Odds API with 30-min caching. Auto-resolves picks from final NBA box scores.</p>
+            <p><span className="text-team-secondary font-semibold">Security:</span> HTML entity escaping on API responses, referrer policy, session-only key storage, and XSS-safe rendering patterns.</p>
+            <p><span className="text-team-secondary font-semibold">Testing:</span> 92-test Jest suite covering file structure, CSS theming, all 30 team configs, data integrity, component existence, URL routing, security checks, and poll regression. Runs automatically via Git pre-commit hook.</p>
           </div>
         </div>
 
@@ -9624,14 +9629,12 @@ function WikiPage() {
           <h3 className="text-lg font-bold text-team-secondary mb-4">Features Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { feature: 'Roster', desc: 'Player cards with headshots, stats vs. league average, radar charts, scout reports, contextual badges (MVP, ALL-STAR, etc.), and jersey collection' },
-              { feature: 'Draft Room', desc: 'Big board with 25 ranked prospects, team-specific fit scores, positional needs breakdown, and full lottery odds' },
-              { feature: 'Mock Draft Simulator', desc: 'Auto-starting lottery simulation with weighted odds, AI pick logic, and interactive team selection with projected lineup impact' },
-              { feature: 'Fan Poll', desc: '25 team-specific questions across 5 categories with vote tracking, Community Voice summary, consensus analysis, and most-divisive question highlight' },
-              { feature: 'Trade Machine', desc: 'Select players to trade, type incoming assets, and get AI-powered analysis with letter grades and GM approval ratings (requires API key)' },
-              { feature: 'Lineup Builder', desc: 'Auto-loads starters with headshots, full coach analysis, offensive/defensive ratings, chemistry meter, strengths/weaknesses, and key matchup advantages' },
-              { feature: 'Daily Picks', desc: 'Betting edge engine with player props, edge calculations, confidence scores, injury boosts, and human-readable explanations' },
-              { feature: 'Fan Map', desc: 'Geolocation-based visitor tracking with US and world map visualizations and city leaderboards' },
+              { feature: 'Daily Picks', desc: '7-factor betting engine with real sportsbook lines (DraftKings/FanDuel), edge calculations, confidence scores, pace analysis, injury exploits, and auto-resolving pick tracker' },
+              { feature: 'Roster', desc: 'Player cards with headshots, stats vs. league average, radar charts, scout reports, contextual badges, lineup builder, and trade machine' },
+              { feature: 'Draft', desc: 'Big board with 25 ranked prospects, team-specific fit scores, dynamic positional needs, mock draft simulator with lottery odds' },
+              { feature: 'Fan Poll', desc: '25 team-specific questions across 5 categories with vote tracking, Community Voice dashboard, consensus analysis, and embedded Fan Map' },
+              { feature: 'Landing Page', desc: 'Conversion-optimized sales page at /nba-betting-edges for paid traffic campaigns — hero, social proof, sample picks, pricing' },
+              { feature: 'Email Capture', desc: 'Waitlist signup with EmailJS-powered welcome emails containing today\'s Pick of the Day' },
             ].map((f, i) => (
               <div key={i} className="rounded-lg p-3 border border-team-primary/15" style={{ background: 'rgba(var(--team-primary-rgb),0.04)' }}>
                 <span className="text-sm font-bold text-team-secondary">{f.feature}</span>
@@ -10001,18 +10004,18 @@ function FAQPage() {
   const [openIdx, setOpenIdx] = useState(null);
 
   const faqs = [
-    { q: 'How do I switch teams?', a: 'Use the team selector dropdown in the navigation bar. Your selection is saved automatically and persists across sessions.' },
-    { q: 'What data does each team have?', a: 'All 30 NBA teams have real rosters with player names, stats, headshot images, scouting reports, strengths/weaknesses, and player comparisons. Every team also has 25 draft prospects with team-specific fit analysis, 25 custom poll questions, and full access to the Trade Machine, Lineup Builder, and Fan Map.' },
-    { q: 'Is my poll data saved?', a: 'Yes. Your votes and poll progress are saved in your browser\'s localStorage. They persist across page reloads but are local to your browser — clearing browser data will reset them.' },
-    { q: 'How does the Mock Draft Simulator work?', a: 'The simulator uses real lottery odds from Tankathon.com to randomly determine draft order (top 4 picks by lottery, picks 5-14 by inverse record). Then AI logic simulates each team\'s pick before your team selects. Each run produces different results.' },
-    { q: 'Does the Trade Machine require an API key?', a: 'Yes. The Trade Machine uses the Claude API (Anthropic) for real-time analysis. You\'ll be prompted to enter your API key when you first use it. Your key is stored only in your browser session — it\'s never sent anywhere except directly to the Anthropic API.' },
-    { q: 'How does the Fan Map work?', a: 'The Fan Map uses your browser\'s Geolocation API (with your permission) to plot your location on an SVG map. Visitor data is stored in localStorage. It\'s a fun visualization of where fans are checking in from — entirely client-side, no data leaves your browser.' },
-    { q: 'Can I share a specific section?', a: 'Yes! Each tab has its own clean URL. For example, share the Draft Room by sending someone nbavault.com/draft. The page will open directly to that section.' },
-    { q: 'How are player ratings calculated?', a: 'Player radar charts (Scoring, Playmaking, Defense, Athleticism, Shooting, IQ) are editorially assigned on a 0-100 scale based on scouting analysis. They represent current ability, not potential.' },
-    { q: 'Where does the lottery odds data come from?', a: 'Draft lottery odds, team records, and probabilities are sourced from Tankathon.com, which tracks the official NBA lottery odds format.' },
-    { q: 'Is this an official NBA product?', a: 'No. NBA Vault is an independent fan project with no affiliation to the NBA, any NBA team, or the National Basketball Players Association. All team names, logos, and player likenesses are property of their respective owners.' },
-    { q: 'What browsers are supported?', a: 'Any modern browser (Chrome, Firefox, Safari, Edge) with JavaScript enabled. The app uses CSS custom properties, ES6+, and the Geolocation API — all widely supported since ~2018.' },
-    { q: 'Can I contribute or report issues?', a: 'NBA Vault is open source. If you spot a wrong player, incorrect stats, or missing data, you can report it or contribute fixes via the GitHub repository.' },
+    { q: 'How do the Daily Picks work?', a: 'Our projection model uses 7 factors — opponent defense rank, pace, recent form, home/away splits, injury impact, minutes consistency, and edge decay — to project player stats. These projections are compared against real sportsbook lines from DraftKings and FanDuel to surface positive-edge plays.' },
+    { q: 'Are the betting lines real?', a: 'When sportsbook data is available, lines come directly from DraftKings and FanDuel via The Odds API. When live lines aren\'t available, the engine uses model-projected lines. A "Live lines" indicator appears in the Vault Engine section when real lines are active.' },
+    { q: 'How does the engine learn?', a: 'The Vault Engine self-calibrates after every resolved pick. It tracks which factors (matchup, form, injury, etc.) correlated with wins and adjusts their weight for future picks. The more picks that resolve, the smarter the model gets.' },
+    { q: 'Are these bets guaranteed to win?', a: 'No bet is ever guaranteed. Our model identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual bets can and will lose.' },
+    { q: 'How do I switch teams?', a: 'Click the team logo in the navigation bar to open the team selector. Your selection is saved automatically and persists across sessions.' },
+    { q: 'What data does each team have?', a: 'All 30 NBA teams have real rosters with player names, stats, headshot images, scouting reports, and player comparisons. Every team has 25 draft prospects with team-specific fit analysis, dynamic positional needs, 25 custom poll questions, a lineup builder, and a trade machine.' },
+    { q: 'How does the Mock Draft Simulator work?', a: 'The simulator uses real lottery odds from Tankathon.com to randomly determine draft order (top 4 picks by lottery, picks 5-14 by inverse record). Then AI logic simulates each team\'s pick. Each run produces different results.' },
+    { q: 'Can I share a specific section?', a: 'Yes! Each tab has its own clean URL. Share the Draft by sending nbavault.com/draft, or the Picks by sending nbavault.com/picks.' },
+    { q: 'What happens when I sign up with my email?', a: 'You\'ll receive a welcome email with today\'s Pick of the Day and be added to the waitlist for full paid access when it launches. No spam — you can unsubscribe anytime.' },
+    { q: 'Is this an official NBA product?', a: 'No. NBA Vault is an independent project with no affiliation to the NBA, any NBA team, or the National Basketball Players Association. All team names, logos, and player likenesses are property of their respective owners.' },
+    { q: 'What browsers are supported?', a: 'Any modern browser (Chrome, Firefox, Safari, Edge) with JavaScript enabled. Works on desktop and mobile.' },
+    { q: 'What sportsbooks does this work with?', a: 'Our picks work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
   ];
 
   return (
