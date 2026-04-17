@@ -8002,7 +8002,22 @@ const VAULT_STORAGE_KEY = 'nbavault_engine_v1';
 function loadVaultEngine() {
   try {
     const saved = JSON.parse(localStorage.getItem(VAULT_STORAGE_KEY));
-    if (saved && saved.version === 1) return saved;
+    if (saved && saved.version === 1) {
+      // One-time migration: clear picks from before real games were connected (April 17, 2026)
+      if (!saved._migrated_v2) {
+        saved.history = saved.history.filter(h => {
+          if (!h.date) return false;
+          const parts = h.date.split('-');
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          return d >= new Date(2026, 3, 17); // April 17, 2026
+        });
+        saved.accuracy = { high: { hits: 0, total: 0 }, mid: { hits: 0, total: 0 }, low: { hits: 0, total: 0 } };
+        saved.statAccuracy = { PTS: { hits: 0, total: 0 }, REB: { hits: 0, total: 0 }, AST: { hits: 0, total: 0 } };
+        saved._migrated_v2 = true;
+        try { localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(saved)); } catch {}
+      }
+      return saved;
+    }
   } catch {}
   return {
     version: 1,
