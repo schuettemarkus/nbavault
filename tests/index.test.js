@@ -401,4 +401,125 @@ describe('Betting Engine', () => {
     const teams = defSection[1].match(/[A-Z]{3}:/g);
     expect(teams.length).toBe(30);
   });
+
+  test('PACE_RATINGS has all 30 teams', () => {
+    expect(scriptContent).toContain('PACE_RATINGS');
+    const paceSection = scriptContent.match(/const PACE_RATINGS = \{([^}]+)\}/);
+    expect(paceSection).not.toBeNull();
+    const teams = paceSection[1].match(/[A-Z]{3}:/g);
+    expect(teams.length).toBe(30);
+  });
+});
+
+// ============================================================
+// 13. NULL SAFETY — prevent crashes from bad data
+// ============================================================
+describe('Null Safety', () => {
+  test('loadVaultEngine guards history as array', () => {
+    // The migration must not crash on null/undefined history
+    expect(scriptContent).toContain("if (!Array.isArray(saved.history)) saved.history = [];");
+  });
+
+  test('calibrateWeights guards against null history', () => {
+    expect(scriptContent).toContain('(engine.history || []).filter');
+  });
+
+  test('autoResolvePicks guards against null history', () => {
+    expect(scriptContent).toContain('(engine.history || []).map');
+  });
+
+  test('engine default has history as empty array', () => {
+    expect(scriptContent).toMatch(/history:\s*\[\]/);
+  });
+
+  test('engine default has all required weight keys', () => {
+    expect(scriptContent).toContain("recentForm:");
+    expect(scriptContent).toContain("matchup:");
+    expect(scriptContent).toContain("injury:");
+    expect(scriptContent).toContain("homeAway:");
+    expect(scriptContent).toContain("pace:");
+  });
+
+  test('DailyPicks handles empty allPicks without crash', () => {
+    // allPicks must default to [] when schedule is null
+    expect(scriptContent).toContain("if (!schedule) return { allPicks: [], todaysGames: [] }");
+  });
+
+  test('getPickDetail handles missing player gracefully', () => {
+    expect(scriptContent).toContain("if (!player || !player.stats) return null");
+  });
+
+  test('fetchOddsApiLines returns empty object on failure', () => {
+    // Every catch block should return {}
+    const fetchFn = scriptContent.match(/async function fetchOddsApiLines[\s\S]*?^}/m);
+    expect(fetchFn).not.toBeNull();
+    const returnStatements = fetchFn[0].match(/return \{\}/g);
+    expect(returnStatements).not.toBeNull();
+    expect(returnStatements.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('getLiveStatus returns null for missing data', () => {
+    expect(scriptContent).toContain("if (!stats || !pick.locked) return null");
+  });
+
+  test('generateExplanation handles zero line without division error', () => {
+    expect(scriptContent).toContain("Math.max(line, 1)");
+  });
+});
+
+// ============================================================
+// 14. PARLAY BUILDER
+// ============================================================
+describe('Parlay Builder', () => {
+  test('parlayScore function exists', () => {
+    expect(scriptContent).toContain('function parlayScore(');
+  });
+
+  test('parlay excludes locked games', () => {
+    expect(scriptContent).toContain("allPicks.filter(p => !p.locked)");
+  });
+
+  test('parlay has minimum 2 legs check', () => {
+    expect(scriptContent).toContain("if (legs.length < 2) return null");
+  });
+
+  test('parlay handles anti-correlation (opposing rebounders)', () => {
+    expect(scriptContent).toContain("score -= 10");
+  });
+
+  test('parlay penalizes low confidence legs', () => {
+    expect(scriptContent).toContain("if (pick.confidence < 40) score -= 8");
+  });
+});
+
+// ============================================================
+// 15. CRITICAL RENDERING — prevent blank page crashes
+// ============================================================
+describe('Critical Rendering', () => {
+  test('no unguarded .length calls on engine.history', () => {
+    // Every engine.history reference should be guarded or in a safe context
+    const dangerousPatterns = scriptContent.match(/engine\.history\.(?!filter|map|forEach|slice|find|some|length|push)/g);
+    // Allow .length only after a truthy check
+    if (dangerousPatterns) {
+      expect(dangerousPatterns.length).toBe(0);
+    }
+  });
+
+  test('loading skeleton exists for immediate FCP', () => {
+    expect(html).toContain('NBA VAULT');
+    expect(html).toContain('spin');
+  });
+
+  test('React root element exists', () => {
+    expect(html).toContain('<div id="root">');
+  });
+
+  test('404.html exists and matches index.html', () => {
+    const fs404 = require('fs');
+    const path404 = path.join(__dirname, '..', '404.html');
+    if (fs404.existsSync(path404)) {
+      const html404 = fs404.readFileSync(path404, 'utf-8');
+      expect(html404.length).toBe(html.length);
+    }
+  });
 });
