@@ -8008,21 +8008,69 @@ function calibrateWeights(engine) {
   return w;
 }
 
-// ---- Matchup & Schedule Data ----
-// Real NBA schedule uses team pairings that rotate. Generate today's matchups deterministically.
-function getTodaysGames() {
-  const allTeamAbbrs = Object.keys(TEAM_CONFIGS);
-  const today = new Date();
-  const daySeed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
-  const rng = (i) => { const x = Math.sin(daySeed * 9301 + i * 49297) * 49297; return x - Math.floor(x); };
+// ---- Live Schedule Data ----
+// Fetch real NBA schedule. Falls back to deterministic schedule if API unavailable.
+const NBA_SCOREBOARD_URL = 'https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json';
+const CORS_PROXY = 'https://corsproxy.io/?';
 
-  // Generate 8 games (16 teams playing tonight)
+// NBA team tricode -> our abbr mapping
+const TRICODE_MAP = {
+  ATL:'ATL', BOS:'BOS', BKN:'BKN', CHA:'CHA', CHI:'CHI', CLE:'CLE', DAL:'DAL',
+  DEN:'DEN', DET:'DET', GSW:'GSW', HOU:'HOU', IND:'IND', LAC:'LAC', LAL:'LAL',
+  MEM:'MEM', MIA:'MIA', MIL:'MIL', MIN:'MIN', NOP:'NOP', NYK:'NYK', OKC:'OKC',
+  ORL:'ORL', PHI:'PHI', PHX:'PHX', POR:'POR', SAC:'SAC', SAS:'SAS', TOR:'TOR',
+  UTA:'UTA', WAS:'WAS',
+};
+
+async function fetchTodaysGames() {
+  try {
+    const resp = await fetch(CORS_PROXY + encodeURIComponent(NBA_SCOREBOARD_URL));
+    if (!resp.ok) throw new Error('API failed');
+    const data = await resp.json();
+    const games = (data.scoreboard?.games || []).map(g => ({
+      home: TRICODE_MAP[g.homeTeam.teamTricode] || g.homeTeam.teamTricode,
+      away: TRICODE_MAP[g.awayTeam.teamTricode] || g.awayTeam.teamTricode,
+      startTime: g.gameTimeUTC || g.gameEt,
+      status: g.gameStatus, // 1=scheduled, 2=in progress, 3=final
+      statusText: g.gameStatusText,
+      homeScore: g.homeTeam.score,
+      awayScore: g.awayTeam.score,
+      isLive: g.gameStatus === 2,
+      isFinal: g.gameStatus === 3,
+      isScheduled: g.gameStatus === 1,
+    }));
+    return { games, source: 'live', date: data.scoreboard?.gameDate };
+  } catch (e) {
+    return null;
+  }
+}
+
+function generateFallbackGames(dateOffset) {
+  const allTeamAbbrs = Object.keys(TEAM_CONFIGS);
+  const d = new Date();
+  d.setDate(d.getDate() + dateOffset);
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const rng = (i) => { const x = Math.sin(seed * 9301 + i * 49297) * 49297; return x - Math.floor(x); };
   const shuffled = [...allTeamAbbrs].sort((a, b) => rng(a.charCodeAt(0)) - rng(b.charCodeAt(0)));
   const games = [];
-  for (let i = 0; i < 16; i += 2) {
-    games.push({ home: shuffled[i], away: shuffled[i + 1] });
+  const numGames = 5 + Math.floor(rng(999) * 6); // 5-10 games
+  for (let i = 0; i < numGames * 2 && i < shuffled.length; i += 2) {
+    const hour = 19 + Math.floor(rng(i + 50) * 3); // 7-9pm ET
+    const startTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0).toISOString();
+    games.push({
+      home: shuffled[i], away: shuffled[i + 1],
+      startTime, status: 1, statusText: `${hour > 12 ? hour - 12 : hour}:00 PM ET`,
+      homeScore: 0, awayScore: 0, isLive: false, isFinal: false, isScheduled: true,
+    });
   }
-  return games;
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return { games, source: 'projected', date: dateStr };
+}
+
+function isGameLocked(game) {
+  if (game.isLive || game.isFinal) return true;
+  if (!game.startTime) return false;
+  return new Date(game.startTime) <= new Date();
 }
 
 // ---- Defensive Ratings by Team (approximated from real standings) ----
@@ -8214,6 +8262,22 @@ function DailyPicks() {
   const [filterStat, setFilterStat] = useState('ALL');
   const [engine, setEngine] = useState(loadVaultEngine);
   const [showTracker, setShowTracker] = useState(false);
+  const [schedule, setSchedule] = useState(null);
+  const [loadingGames, setLoadingGames] = useState(true);
+
+  // Fetch real schedule on mount
+  useEffect(() => {
+    (async () => {
+      let data = await fetchTodaysGames();
+      if (!data || data.games.length === 0) {
+        // No games today — try tomorrow, then day after
+        data = generateFallbackGames(1);
+        if (data.games.length === 0) data = generateFallbackGames(2);
+      }
+      setSchedule(data);
+      setLoadingGames(false);
+    })();
+  }, []);
 
   // Calibrate on mount
   useEffect(() => {
@@ -8244,9 +8308,10 @@ function DailyPicks() {
     });
   }, []);
 
-  // Generate REAL picks using projection model + today's matchups
+  // Generate picks from real schedule data
   const { allPicks, todaysGames } = useMemo(() => {
-    const games = getTodaysGames();
+    if (!schedule) return { allPicks: [], todaysGames: [] };
+    const games = schedule.games;
     const today = new Date();
     const dateKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 
@@ -8266,7 +8331,7 @@ function DailyPicks() {
         const isHome = teamAbbr === game.home;
         const opponent = isHome ? game.away : game.home;
         tc.players.filter(p => p.starter && p.stats.ppg >= 12).forEach(p => {
-          candidates.push({ ...p, teamAbbr, teamName: tc.name, isHome, opponent });
+          candidates.push({ ...p, teamAbbr, teamName: tc.name, isHome, opponent, game });
         });
       });
     });
@@ -8304,6 +8369,8 @@ function DailyPicks() {
           matchupRank: oppDefRank, hitRate, hadInjuryBoost: !!injury,
           minutesConsistency: 'high', avgMinutes: 33, injury,
           opponent: p.opponent, isHome: p.isHome,
+          gameTime: p.game?.startTime, gameStatus: p.game?.statusText,
+          locked: isGameLocked(p.game || {}),
         };
         pick.confidence = calcConfidence(pick);
         pick.explanation = generateExplanation(pick);
@@ -8342,7 +8409,7 @@ function DailyPicks() {
     }
 
     return { allPicks: picks, todaysGames: games };
-  }, [engine.weights]);
+  }, [schedule, engine.weights]);
 
   // Filter and sort
   const filteredPicks = useMemo(() => {
@@ -8512,15 +8579,19 @@ function DailyPicks() {
           <div className="col-span-4">Insight</div>
         </div>
         {filteredPicks.slice(0, FREE_LIMIT + 5).map((pick, i) => {
-          const isLocked = i >= FREE_LIMIT;
+          const isPaid = i >= FREE_LIMIT;
           const isPositive = pick.edge > 0;
+          const gameLocked = pick.locked;
           return (
-            <div key={i} className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${isLocked ? '' : 'hover:bg-team-primary/5'} ${i === 0 && !isLocked ? 'bg-team-secondary/5' : ''}`}
-              style={isLocked ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
+            <div key={i} className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${isPaid ? '' : gameLocked ? 'opacity-60' : 'hover:bg-team-primary/5'} ${i === 0 && !isPaid ? 'bg-team-secondary/5' : ''}`}
+              style={isPaid ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
               <div className="col-span-3 flex items-center gap-2 min-w-0">
                 {pick.headshot && <img src={pick.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white truncate">{pick.player}</div>
+                  <div className="text-sm font-bold text-white truncate flex items-center gap-1">
+                    {pick.player}
+                    {gameLocked && <span className="text-[10px] text-gray-500" title="Game started">&#128274;</span>}
+                  </div>
                   <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{(pick.teamAbbr === homeTeam || pick.opponent === homeTeam) ? ' ★' : ''}</div>
                 </div>
               </div>
@@ -8545,15 +8616,16 @@ function DailyPicks() {
       {/* Picks Cards — Mobile */}
       <div className="md:hidden space-y-3 mb-8">
         {filteredPicks.slice(0, FREE_LIMIT + 3).map((pick, i) => {
-          const isLocked = i >= FREE_LIMIT;
+          const isPaid = i >= FREE_LIMIT;
           const isPositive = pick.edge > 0;
+          const gameLocked = pick.locked;
           return (
-            <div key={i} className={`glass rounded-xl p-4 ${i === 0 && !isLocked ? 'border border-team-secondary/40' : ''}`}
-              style={isLocked ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
+            <div key={i} className={`glass rounded-xl p-4 ${i === 0 && !isPaid ? 'border border-team-secondary/40' : ''} ${gameLocked && !isPaid ? 'opacity-60' : ''}`}
+              style={isPaid ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
               <div className="flex items-center gap-3 mb-3">
                 {pick.headshot && <img src={pick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white truncate">{pick.player}</div>
+                  <div className="font-bold text-white truncate flex items-center gap-1">{pick.player}{gameLocked && <span className="text-[10px] text-gray-500">&#128274;</span>}</div>
                   <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}</div>
                 </div>
                 <div className="text-right shrink-0">
@@ -8608,19 +8680,37 @@ function DailyPicks() {
         </div>
       )}
 
-      {/* Today's Games */}
+      {/* Schedule + Game Status */}
+      {loadingGames ? (
+        <div className="text-center py-4 mb-6"><span className="text-gray-500 text-sm animate-pulse">Loading schedule...</span></div>
+      ) : (
       <div className="glass rounded-2xl p-4 mb-6">
-        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 text-center">Tonight's Games</h3>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+            {schedule?.source === 'live' ? "Today's Games" : 'Upcoming Games'}
+          </h3>
+          {schedule?.source === 'live' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
+          {schedule?.source === 'projected' && <span className="text-[9px] text-gray-600 px-1.5 py-0.5 rounded bg-gray-800">projected</span>}
+        </div>
         <div className="flex flex-wrap justify-center gap-2">
-          {todaysGames.map((g, i) => (
-            <div key={i} className="px-3 py-1.5 rounded-lg text-xs font-mono" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
-              <span className="text-gray-400">{g.away}</span>
-              <span className="text-gray-600 mx-1">@</span>
-              <span className="text-white font-bold">{g.home}</span>
-            </div>
-          ))}
+          {todaysGames.map((g, i) => {
+            const locked = isGameLocked(g);
+            return (
+              <div key={i} className={`px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 ${locked ? 'opacity-50' : ''}`} style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
+                {locked && <span className="text-[10px]">&#128274;</span>}
+                {g.isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                <span className="text-gray-400">{g.away}</span>
+                <span className="text-gray-600">@</span>
+                <span className="text-white font-bold">{g.home}</span>
+                {g.isLive && <span className="text-red-400 font-bold ml-1">{g.awayScore}-{g.homeScore}</span>}
+                {g.isFinal && <span className="text-gray-500 ml-1">F</span>}
+                {g.isScheduled && g.statusText && <span className="text-gray-600 ml-1">{g.statusText}</span>}
+              </div>
+            );
+          })}
         </div>
       </div>
+      )}
 
       {/* Engine Performance & Tracker */}
       <div className="glass rounded-2xl p-5 mb-6">
