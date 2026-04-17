@@ -4,20 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose"
+    "test": "jest --verbose",
+    "update-stats": "node scripts/update-stats.js",
+    "update-stats:dry": "node scripts/update-stats.js --dry-run"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/schuettemarkus/jazzketball.git"
+    "url": "git+https://github.com/schuettemarkus/nbavault.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/schuettemarkus/jazzketball/issues"
+    "url": "https://github.com/schuettemarkus/nbavault/issues"
   },
-  "homepage": "https://github.com/schuettemarkus/jazzketball#readme",
+  "homepage": "https://github.com/schuettemarkus/nbavault#readme",
   "devDependencies": {
     "jest": "^30.3.0"
   }
