@@ -6182,6 +6182,16 @@ function RosterSection() {
         <p className="text-center text-gray-600 text-xs mt-4">Jersey designs are property of Nike and the NBA. City Edition designs for 2025-26 feature community-inspired themes unique to each market.</p>
       </div>
 
+      {/* Lineup Builder — embedded in Roster */}
+      <div className="mt-12 pt-8 border-t border-team-primary/20">
+        <LineupBuilder />
+      </div>
+
+      {/* Trade Machine — embedded in Roster */}
+      <div className="mt-12 pt-8 border-t border-team-primary/20">
+        <TradeMachine />
+      </div>
+
       <ScoutingPanel player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </section>
   );
@@ -7160,6 +7170,11 @@ function FanPoll() {
           </div>
         </div>
       )}
+
+      {/* Fan Map — community engagement */}
+      <div className="mt-12 pt-8 border-t border-team-primary/20">
+        <FanMap />
+      </div>
     </section>
   );
 }
@@ -9203,7 +9218,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     return localStorage.getItem('nbavault_selected_team') || 'UTA';
   });
-  const tabs = ['ROSTER', 'DRAFT', 'PICKS', 'POLL', 'TRADES', 'LINEUPS', 'FAN MAP'];
+  const tabs = ['ROSTER', 'DRAFT', 'PICKS', 'POLL'];
 
   const navigateTo = useCallback((tab) => {
     setActiveTab(tab);
@@ -9327,11 +9342,10 @@ function App() {
       <main>
         {activeTab === 'ROSTER' && <RosterSection />}
         {activeTab === 'DRAFT' && <DraftRoom />}
-        {activeTab === 'FAN MAP' && <FanMap />}
+        {/* FanMap is embedded in the Poll page */}
         {activeTab === 'POLL' && <FanPoll />}
         {activeTab === 'PICKS' && <DailyPicks />}
-        {activeTab === 'TRADES' && <TradeMachine />}
-        {activeTab === 'LINEUPS' && <LineupBuilder />}
+        {/* Trades + Lineups are embedded in Roster page */}
         {activeTab === 'WIKI' && <WikiPage />}
         {activeTab === 'FAQ' && <FAQPage />}
       </main>
