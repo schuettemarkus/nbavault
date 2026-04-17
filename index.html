@@ -8230,7 +8230,7 @@ const ODDS_API_KEY_STORAGE = 'nbavault_odds_api_key';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4/sports/basketball_nba';
 
 function getOddsApiKey() {
-  return localStorage.getItem(ODDS_API_KEY_STORAGE) || '';
+  return localStorage.getItem(ODDS_API_KEY_STORAGE) || 'edf9bf61d80e2187206f76adbfada5cc';
 }
 
 function setOddsApiKey(key) {
@@ -9450,12 +9450,12 @@ function DailyPicks() {
         {emailSubmitted ? (
           <div className="text-green-400 font-bold text-sm py-2">You're in! Check your inbox tomorrow morning.</div>
         ) : (
-          <form onSubmit={handleEmailSubmit} className="flex gap-2 max-w-md mx-auto">
+          <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
             <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)}
               placeholder="Enter your email"
               required
-              className="flex-1 bg-gray-900/50 border border-team-primary rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary" />
-            <button type="submit" className="px-6 py-2.5 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap">
+              className="flex-1 bg-gray-900/50 border border-team-primary rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary min-w-0" />
+            <button type="submit" className="px-6 py-2.5 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap shrink-0">
               Subscribe Free
             </button>
           </form>
