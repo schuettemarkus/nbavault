@@ -8476,16 +8476,17 @@ const LEAGUE_AVG_PACE = 97.5;
 // How much a player's output swings game to game. Lower = more consistent = safer bet
 const POS_VOLATILITY = { PG: 0.22, SG: 0.24, SF: 0.25, PF: 0.26, C: 0.28 };
 
-// ---- Injury Report (refreshed per session) ----
+// ---- Injury Report (updated for current rosters) ----
+// Each entry includes the team so the engine can verify both players are teammates
 const INJURY_REPORT = {
-  'Anthony Edwards': { out: 'Julius Randle', boost: { PTS: 4.2, AST: 1.8 }, note: 'Randle out — Edwards becomes primary option' },
-  'Tyrese Maxey': { out: 'Joel Embiid', boost: { PTS: 5.5, AST: 2.1 }, note: 'Embiid out — Maxey usage spikes to 32%' },
-  'Desmond Bane': { out: 'Ja Morant', boost: { PTS: 6.1, AST: 3.2 }, note: 'Morant out — Bane handles primary creation' },
-  'Scottie Barnes': { out: 'RJ Barrett', boost: { PTS: 3.8, REB: 1.5 }, note: 'Barrett out — Barnes dominates touches' },
-  'Cade Cunningham': { out: 'Jalen Duren', boost: { PTS: 2.1, AST: 1.4 }, note: 'Duren out — Cunningham gets more paint touches' },
-  'Darius Garland': { out: 'Kawhi Leonard', boost: { PTS: 3.5, AST: 2.0 }, note: 'Leonard out — Garland takes over as primary scorer' },
-  'Tyler Herro': { out: 'Bam Adebayo', boost: { PTS: 4.0, REB: -1.0 }, note: 'Adebayo out — Herro becomes focal point of offense' },
-  'Jalen Williams': { out: 'Chet Holmgren', boost: { PTS: 3.2, REB: 2.5 }, note: 'Holmgren out — Williams takes on bigger role inside' },
+  'Anthony Edwards': { out: 'Julius Randle', team: 'MIN', boost: { PTS: 4.2, AST: 1.8 }, note: 'Randle out — Edwards becomes primary option' },
+  'Tyrese Maxey': { out: 'Joel Embiid', team: 'PHI', boost: { PTS: 5.5, AST: 2.1 }, note: 'Embiid out — Maxey usage spikes to 32%' },
+  'Cade Cunningham': { out: 'Jalen Duren', team: 'DET', boost: { PTS: 2.1, AST: 1.4 }, note: 'Duren out — Cunningham gets more paint touches' },
+  'Tyler Herro': { out: 'Bam Adebayo', team: 'MIA', boost: { PTS: 4.0, REB: -1.0 }, note: 'Adebayo out — Herro becomes focal point of offense' },
+  'Jalen Williams': { out: 'Chet Holmgren', team: 'OKC', boost: { PTS: 3.2, REB: 2.5 }, note: 'Holmgren out — Williams takes on bigger role inside' },
+  'Austin Reaves': { out: 'LeBron James', team: 'LAL', boost: { PTS: 4.5, AST: 2.0 }, note: 'LeBron out — Reaves becomes primary ball handler' },
+  'Jamal Murray': { out: 'Aaron Gordon', team: 'DEN', boost: { PTS: 3.0, AST: 1.5 }, note: 'Gordon out — Murray handles increased offensive load' },
+  'Stephon Castle': { out: "De'Aaron Fox", team: 'SAS', boost: { PTS: 4.0, AST: 2.5 }, note: 'Fox out — Castle takes over primary playmaking' },
 };
 
 // ---- Real Projection Model (v2 — 7 factors) ----
@@ -8518,8 +8519,9 @@ function projectPlayer(player, opponent, isHome, engine) {
     ptsPrj += formDelta * 0.4 * w.recentForm;
   }
 
-  // Factor 4: Injury boost
-  const injury = INJURY_REPORT[player.name];
+  // Factor 4: Injury boost — only if player is on the same team as the injured player
+  const injuryEntry = INJURY_REPORT[player.name];
+  const injury = injuryEntry && injuryEntry.team === (player.teamAbbr || '') ? injuryEntry : null;
   if (injury) {
     ptsPrj += (injury.boost.PTS || 0) * w.injury;
     rebPrj += (injury.boost.REB || 0) * w.injury;
@@ -9110,8 +9112,8 @@ function DailyPicks() {
                   color: 'var(--team-secondary)'
                 }}>{bestPick.confidence}% confidence</span>
                 {bestPick.injury && (
-                  <span className="px-3 py-1 rounded-lg bg-amber-500/15 text-amber-400 text-sm font-bold border border-amber-500/30">
-                    &#9888; {bestPick.injury.out} OUT
+                  <span className="px-3 py-1 rounded-lg bg-green-500/15 text-green-400 text-sm font-bold border border-green-500/30">
+                    &#9650; {bestPick.injury.out} OUT
                   </span>
                 )}
               </div>
@@ -9375,7 +9377,7 @@ function DailyPicks() {
               </div>
               <div className="col-span-4">
                 <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
-                {pick.injury && <span className="text-[9px] text-amber-400 font-bold">&#9888; Injury boost</span>}
+                {pick.injury && <span className="text-[9px] text-green-400 font-bold">&#9650; Injury edge</span>}
               </div>
             </div>
             {/* Expanded: Verified player data only */}
@@ -9488,7 +9490,7 @@ function DailyPicks() {
                   <span className="text-gray-500">Conf</span>
                   <span className={`font-bold ${pick.confidence >= 70 ? 'text-green-400' : pick.confidence >= 50 ? 'text-team-secondary' : 'text-red-400'}`}>{pick.confidence}%</span>
                 </div>
-                {pick.injury && <span className="text-[10px] text-amber-400 font-bold">&#9888; Injury boost</span>}
+                {pick.injury && <span className="text-[10px] text-green-400 font-bold">&#9650; Injury edge</span>}
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
               </div>
@@ -9626,10 +9628,10 @@ function DailyPicks() {
             const injuryPicks = allPicks.filter(p => p.injury);
             return injuryPicks.length > 0 ? (
               <div className="glass rounded-2xl p-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500 opacity-40" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-green-500 opacity-40" />
                 <div className="flex items-center gap-2 mb-4">
-                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0M12 9v4m0 4h.01" /></svg>
-                  <span className="text-sm font-black text-amber-400 uppercase tracking-wider">Injury Exploits</span>
+                  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                  <span className="text-sm font-black text-green-400 uppercase tracking-wider">Injury Edges</span>
                 </div>
                 <div className="space-y-3">
                   {injuryPicks.slice(0, 3).map(p => (
@@ -9637,7 +9639,7 @@ function DailyPicks() {
                       {p.headshot && <img src={p.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white font-bold truncate">{p.player}</div>
-                        <div className="text-[10px] text-amber-400/70">{p.injury.out} out — {p.injury.note.split('.')[0]}</div>
+                        <div className="text-[10px] text-green-400/70">{p.injury.out} out — {p.injury.note.split('.')[0]}</div>
                       </div>
                       <span className="text-sm text-amber-400 font-black shrink-0">+{p.edge}</span>
                     </div>
