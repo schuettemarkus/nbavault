@@ -21,6 +21,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://unpkg.com" crossorigin />
 <link rel="dns-prefetch" href="https://unpkg.com" />
+<!-- Font loaded as link (non-blocking) instead of @import (blocking) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" />
+<!-- Tailwind must be sync (generates utility classes before paint) -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -40,13 +43,14 @@ tailwind.config = {
   }
 }
 </script>
+<!-- React core must be sync (components depend on it) -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js"></script>
+<!-- Babel + Recharts deferred (parse JSX after initial paint) -->
+<script src="https://unpkg.com/prop-types@15/prop-types.min.js" defer></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" defer></script>
+<script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js" defer></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 :root {
   --team-primary: #4E008E;
   --team-secondary: #79A3DC;
@@ -77,7 +81,7 @@ body { font-family: 'Inter', sans-serif; background: var(--team-midnight); color
 .pulse-secondary { animation: pulse-secondary 2s infinite; will-change: box-shadow; }
 .pulse-dot { animation: pulse-dot 2s infinite; }
 .shimmer { background: linear-gradient(90deg, transparent, rgba(var(--team-secondary-rgb),0.1), transparent); background-size: 200% 100%; animation: shimmer 3s infinite; }
-.glass { background: rgba(var(--team-primary-rgb),0.12); backdrop-filter: blur(10px); border: 1px solid rgba(var(--team-primary-rgb),0.25); }
+.glass { background: rgba(var(--team-primary-rgb),0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(var(--team-primary-rgb),0.25); contain: paint; }
 .team-secondary-gradient { background: linear-gradient(135deg, var(--team-secondary), color-mix(in srgb, var(--team-secondary), white 20%), var(--team-secondary)); }
 .team-primary-gradient { background: linear-gradient(135deg, var(--team-midnight), var(--team-primary)); }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -85,7 +89,16 @@ body { font-family: 'Inter', sans-serif; background: var(--team-midnight); color
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <!-- Loading skeleton — shown until React mounts (Babel compile time) -->
+  <div style="min-height:100vh;background:var(--team-midnight);display:flex;align-items:center;justify-content:center">
+    <div style="text-align:center">
+      <div style="font-size:1.5rem;font-weight:900;color:#fff;font-family:Inter,sans-serif">NBA VAULT</div>
+      <div style="margin-top:12px;width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--team-secondary);border-radius:50%;animation:spin 0.8s linear infinite;margin-left:auto;margin-right:auto"></div>
+    </div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -8084,27 +8097,6 @@ async function fetchTodaysGames() {
   }
 }
 
-function generateFallbackGames(dateOffset) {
-  const allTeamAbbrs = Object.keys(TEAM_CONFIGS);
-  const d = new Date();
-  d.setDate(d.getDate() + dateOffset);
-  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
-  const rng = (i) => { const x = Math.sin(seed * 9301 + i * 49297) * 49297; return x - Math.floor(x); };
-  const shuffled = [...allTeamAbbrs].sort((a, b) => rng(a.charCodeAt(0)) - rng(b.charCodeAt(0)));
-  const games = [];
-  const numGames = 5 + Math.floor(rng(999) * 6); // 5-10 games
-  for (let i = 0; i < numGames * 2 && i < shuffled.length; i += 2) {
-    const hour = 19 + Math.floor(rng(i + 50) * 3); // 7-9pm ET
-    const startTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0).toISOString();
-    games.push({
-      home: shuffled[i], away: shuffled[i + 1],
-      startTime, status: 1, statusText: `${hour > 12 ? hour - 12 : hour}:00 PM ET`,
-      homeScore: 0, awayScore: 0, isLive: false, isFinal: false, isScheduled: true,
-    });
-  }
-  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  return { games, source: 'projected', date: dateStr };
-}
 
 function isGameLocked(game) {
   if (game.isLive || game.isFinal) return true;
