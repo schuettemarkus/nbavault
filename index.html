@@ -6171,12 +6171,21 @@ function RosterSection() {
             const growth = age <= 21 ? 1.12 : age <= 23 ? 1.08 : age <= 26 ? 1.04 : age <= 29 ? 1.0 : age <= 32 ? 0.94 : 0.87;
             const p27 = { ppg: +(player.stats.ppg * growth).toFixed(1), rpg: +(player.stats.rpg * growth).toFixed(1), apg: +(player.stats.apg * growth).toFixed(1) };
             return (
-              <div className="mt-2 pt-1.5 border-t border-white/[0.04]">
-                <div className="text-[8px] text-gray-600 uppercase tracking-wider mb-0.5">2027 Proj</div>
-                <div className="flex justify-center gap-2 text-[10px]">
-                  <span className={`font-bold ${p27.ppg > player.stats.ppg ? 'text-green-400/70' : p27.ppg < player.stats.ppg ? 'text-red-400/70' : 'text-gray-500'}`}>{p27.ppg}</span>
-                  <span className={`font-bold ${p27.rpg > player.stats.rpg ? 'text-green-400/70' : p27.rpg < player.stats.rpg ? 'text-red-400/70' : 'text-gray-500'}`}>{p27.rpg}</span>
-                  <span className={`font-bold ${p27.apg > player.stats.apg ? 'text-green-400/70' : p27.apg < player.stats.apg ? 'text-red-400/70' : 'text-gray-500'}`}>{p27.apg}</span>
+              <div className="mt-2 pt-2 border-t border-white/[0.06]">
+                <div className="text-[9px] text-gray-500 uppercase tracking-wider mb-1 font-bold">2027 Projected</div>
+                <div className="flex justify-center gap-3 text-[11px]">
+                  <span className="flex flex-col items-center">
+                    <span className={`font-black ${p27.ppg > player.stats.ppg ? 'text-green-400' : p27.ppg < player.stats.ppg ? 'text-red-400' : 'text-gray-500'}`}>{p27.ppg}</span>
+                    <span className="text-[8px] text-gray-600">PPG</span>
+                  </span>
+                  <span className="flex flex-col items-center">
+                    <span className={`font-black ${p27.rpg > player.stats.rpg ? 'text-green-400' : p27.rpg < player.stats.rpg ? 'text-red-400' : 'text-gray-500'}`}>{p27.rpg}</span>
+                    <span className="text-[8px] text-gray-600">RPG</span>
+                  </span>
+                  <span className="flex flex-col items-center">
+                    <span className={`font-black ${p27.apg > player.stats.apg ? 'text-green-400' : p27.apg < player.stats.apg ? 'text-red-400' : 'text-gray-500'}`}>{p27.apg}</span>
+                    <span className="text-[8px] text-gray-600">APG</span>
+                  </span>
                 </div>
               </div>
             );
