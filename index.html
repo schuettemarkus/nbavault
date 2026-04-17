@@ -1328,8 +1328,8 @@ const CHI_PLAYERS = [
     {
       name: "Collin Sexton", pos: "SG/PG", number: 14, badge: null, starter: false,
       headshot: 'https://cdn.nba.com/headshots/nba/latest/1040x760/1629012.png',
-      stats: { ppg: 6.3, rpg: 2.6, apg: 1.4, fgPct: 41.5, threePct: 32.9, tsPct: 60.4 },
-      lastYear: null,
+      stats: { ppg: 14.2, rpg: 1.9, apg: 3.7, fgPct: 48.8, threePct: 39.3, tsPct: 57.0, mpg: 22.3 },
+      lastYear: { ppg: 18.4, rpg: 2.7, apg: 4.2, fgPct: 48.0, threePct: 40.6, tsPct: 58.0 },
       radar: { Scoring: 30, Playmaking: 31, Defense: 52, Athleticism: 56, Shooting: 59, IQ: 59 },
       monthly: [5.6,6.8,6.1,6.2,5.1,6.2,6.4],
       strengths: ["Reliable bench contributor", "Solid two-way presence", "Solid two-way presence"], weaknesses: ["Defensive consistency could improve", "Shot selection under pressure", "Durability questions remain"],
@@ -5970,7 +5970,7 @@ function ScoutingPanel({ player, onClose }) {
                       {delta > 0 ? '\u2191' : delta < 0 ? '\u2193' : '\u2013'} {Math.abs(delta)}% YoY
                     </div>
                   )}
-                  {delta === null && player.lastYear === null && (
+                  {delta === null && player.badge === 'ROOKIE' && (
                     <div className="text-[10px] text-gray-600 mt-0.5">ROOKIE</div>
                   )}
                 </div>
@@ -6157,14 +6157,14 @@ function RosterSection() {
           <p className="text-xs text-gray-400">{player.pos} | #{player.number}</p>
           {(() => { const b = getAutoBadge(player); return b ? <div className="mt-1.5"><Badge type={b} /></div> : null; })()}
           <div className={`flex justify-center gap-3 mt-2 ${large ? 'text-sm' : 'text-xs'} text-gray-400`}>
-            <StatWithDelta val={player.stats.ppg} label="PPG" prev={player.lastYear?.ppg} showComp={player.starter} compAvg={leagueAvg.ppg} isRookie={player.lastYear === null} />
-            <StatWithDelta val={player.stats.rpg} label="RPG" prev={player.lastYear?.rpg} showComp={player.starter} compAvg={leagueAvg.rpg} isRookie={player.lastYear === null} />
-            <StatWithDelta val={player.stats.apg} label="APG" prev={player.lastYear?.apg} showComp={player.starter} compAvg={leagueAvg.apg} isRookie={player.lastYear === null} />
+            <StatWithDelta val={player.stats.ppg} label="PPG" prev={player.lastYear?.ppg} showComp={player.starter} compAvg={leagueAvg.ppg} isRookie={player.badge === 'ROOKIE'} />
+            <StatWithDelta val={player.stats.rpg} label="RPG" prev={player.lastYear?.rpg} showComp={player.starter} compAvg={leagueAvg.rpg} isRookie={player.badge === 'ROOKIE'} />
+            <StatWithDelta val={player.stats.apg} label="APG" prev={player.lastYear?.apg} showComp={player.starter} compAvg={leagueAvg.apg} isRookie={player.badge === 'ROOKIE'} />
           </div>
           {/* 2027 Projected Stats */}
           {(() => {
             // Estimate age from context: rookies ~20, no lastYear change ~24, veterans ~30
-            const isRookie = player.lastYear === null || player.badge === 'ROOKIE';
+            const isRookie = player.badge === 'ROOKIE';
             const isVet = player.badge === 'VETERAN' || player.badge === 'ALL-STAR' || player.badge === 'MVP' || player.badge === 'DPOY';
             const age = player.age || (isRookie ? 20 : isVet ? 28 : player.lastYear ? 24 : 23);
             // Growth curve: young players grow, prime holds, veterans decline
