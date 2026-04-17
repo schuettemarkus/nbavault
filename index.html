@@ -8215,8 +8215,11 @@ function projectPlayer(player, opponent, isHome, engine) {
 }
 
 // Generate a sportsbook-style line from projection (slight vig toward under)
-function generateLine(projection) {
-  const offset = (Math.random() * 1.5 - 0.5); // -0.5 to +1.0
+function generateLine(projection, seed) {
+  // Deterministic offset so lines don't shift on re-render
+  const s = typeof seed === 'number' ? seed : 0;
+  const rng = Math.sin(s * 9301 + 49297) * 49297;
+  const offset = (rng - Math.floor(rng)) * 1.5 - 0.5; // -0.5 to +1.0
   return Math.round((projection + offset) * 2) / 2; // round to 0.5
 }
 
@@ -8283,33 +8286,48 @@ function saveWinTracker(tracker) {
 function generateExplanation(pick) {
   const { player, statType, line, projection, edge, injury } = pick;
   const last = player.split(' ').pop();
-  const pct = Math.round((edge / line) * 100);
-  const hitRate = pick.hitRate || 0;
+  const pct = Math.round((edge / Math.max(line, 1)) * 100);
+  const hitRate = Math.min(pick.hitRate || 0, 5); // always capped at 5
+  const matchupRank = pick.matchupRank || 15;
 
-  let explanation = '';
+  const parts = [];
 
-  // Injury boost explanation (highest priority — most actionable)
+  // Lead with the strongest signal — pick ONE primary driver
   if (injury) {
-    explanation = `${injury.note}. He's cleared this line in ${hitRate} of his last 5 games.`;
-  }
-  // Strong recent form
-  else if (hitRate >= 4) {
-    explanation = `${last} has hit the over on ${statType} ${hitRate}/5 recent games. The matchup tonight ranks ${pick.matchupRank <= 10 ? 'bottom-10' : 'below average'} defending this stat.`;
-  }
-  // Matchup-driven
-  else if (pick.matchupRank && pick.matchupRank <= 8) {
-    explanation = `Opponent ranks #${pick.matchupRank} worst at defending ${statType}. ${last}'s projection is ${pct}% above the line.`;
-  }
-  // Volume-driven
-  else if (edge > 3) {
-    explanation = `${last} is projected at ${projection} ${statType} — ${edge.toFixed(1)} above the line. Minutes have been consistent (${pick.avgMinutes || 34}+ MPG last 5).`;
-  }
-  // Default
-  else {
-    explanation = `${last} projects ${edge > 0 ? 'above' : 'below'} the line at ${projection} ${statType}. ${hitRate >= 3 ? 'Recent trend supports this.' : 'Proceed with caution.'}`;
+    // Injury boost is the primary edge
+    parts.push(injury.note);
+    if (hitRate >= 3) {
+      parts.push(`Even without the boost, ${last} has cleared this line in ${hitRate} of his last 5 stretches.`);
+    }
+  } else if (hitRate >= 4 && matchupRank >= 15) {
+    // Strong form + soft matchup
+    parts.push(`${last} has cleared the ${statType} over in ${hitRate} of his last 5 stretches.`);
+    parts.push(`Tonight's opponent ranks #${matchupRank} in ${statType} defense — below average.`);
+  } else if (hitRate >= 4) {
+    // Strong form, tough matchup — be honest
+    parts.push(`${last} has hit this over in ${hitRate} of 5 recent stretches.`);
+    parts.push(matchupRank <= 10 ? `Tougher matchup tonight (#${matchupRank} defense), but the volume is there.` : `Projection sits ${pct}% above the line.`);
+  } else if (matchupRank >= 20) {
+    // Matchup-driven edge
+    parts.push(`Opponent ranks #${matchupRank} in ${statType} defense — bottom third of the league.`);
+    parts.push(`${last} projects at ${projection} ${statType}, ${edge.toFixed(1)} above the line.`);
+  } else if (edge >= 3) {
+    // Large projection gap
+    parts.push(`${last} is projected at ${projection} ${statType} — ${edge.toFixed(1)} above the line.`);
+    parts.push(hitRate >= 3 ? `He's cleared this threshold ${hitRate} of 5 recent stretches.` : `Minutes have been consistent at ${pick.avgMinutes || 33}+ MPG.`);
+  } else {
+    // Moderate edge — be transparent
+    parts.push(`${last} projects at ${projection} ${statType}, ${pct}% above the line.`);
+    if (hitRate >= 3) {
+      parts.push(`Cleared this number in ${hitRate} of 5 recent stretches.`);
+    } else if (hitRate <= 1) {
+      parts.push('Recent trend is inconsistent — lower confidence pick.');
+    } else {
+      parts.push(pick.isHome ? 'Home-court split provides a slight bump.' : 'Road game, but projection still favors the over.');
+    }
   }
 
-  return explanation;
+  return parts.join(' ');
 }
 
 // Confidence score: 1-100
@@ -8448,20 +8466,22 @@ function DailyPicks() {
       // Pick best stat type for this player based on edge
       statTypes.forEach(st => {
         const proj = projections[st];
-        const line = generateLine(proj);
+        const lineSeed = daySeed + ci * 7 + statTypes.indexOf(st) * 31;
+        const line = generateLine(proj, lineSeed);
         const edge = +(proj - line).toFixed(1);
         if (Math.abs(edge) < 0.3) return; // Skip tiny edges
 
         const oppDefRank = DEF_RATINGS[p.opponent] || 15;
         const injury = INJURY_REPORT[p.name] || null;
 
-        // Simulated hit rate from monthly consistency
+        // Hit rate from last 5 monthly periods (how often player exceeds 90% of avg)
         const monthly = p.monthly;
         let hitRate = 3;
-        if (monthly && monthly.length >= 5) {
+        if (monthly && monthly.length >= 3) {
           const vals = typeof monthly[0] === 'object' ? monthly.map(m => m.ppg) : monthly;
+          const last5 = vals.slice(-5);
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-          hitRate = vals.filter(v => v > avg * 0.9).length;
+          hitRate = Math.min(last5.filter(v => v > avg * 0.9).length, 5);
         }
 
         const pick = {
