@@ -8003,6 +8003,8 @@ function loadVaultEngine() {
   try {
     const saved = JSON.parse(localStorage.getItem(VAULT_STORAGE_KEY));
     if (saved && saved.version === 1) {
+      // Ensure history is always an array
+      if (!Array.isArray(saved.history)) saved.history = [];
       // One-time migration: clear picks from before real games were connected (April 17, 2026)
       if (!saved._migrated_v2) {
         saved.history = saved.history.filter(h => {
@@ -8038,7 +8040,7 @@ function saveVaultEngine(engine) {
 }
 
 function calibrateWeights(engine) {
-  const h = engine.history.filter(p => p.result);
+  const h = (engine.history || []).filter(p => p.result);
   if (h.length < 5) return engine.weights;
 
   const w = { ...engine.weights };
@@ -8378,7 +8380,7 @@ function autoResolvePicks(engine, liveStats, games) {
   if (finalGames.length === 0 || Object.keys(liveStats).length === 0) return null;
 
   let changed = false;
-  const updated = { ...engine, history: engine.history.map(h => {
+  const updated = { ...engine, history: (engine.history || []).map(h => {
     if (h.result) return h; // Already resolved
     const stats = liveStats[h.player];
     if (!stats) return h;
@@ -9103,7 +9105,9 @@ function DailyPicks() {
       ); })()}
 
       {/* Parlay Builder */}
-      {allPicks.filter(p => !p.locked).length >= 2 && (() => {
+      {(() => {
+        const unlocked = allPicks.filter(p => !p.locked);
+        if (unlocked.length < 2) return null;
         // ---- Smart Parlay Correlation Logic ----
         // 1. Anchor: highest confidence pick (safe leg)
         // 2. Second leg: scored by correlation + value
