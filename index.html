@@ -7951,6 +7951,355 @@ function AIChatScout() {
 // ============================================================
 // SECTION: WIKI
 // ============================================================
+// ============================================================
+// SECTION: DAILY PICKS — BETTING EDGE ENGINE
+// ============================================================
+
+// Mock injury data for boost calculations
+const INJURY_REPORT = {
+  'Anthony Edwards': { out: 'Julius Randle', boost: { PTS: 4.2, AST: 1.8 }, note: 'Randle out — Edwards becomes primary option' },
+  'Tyrese Maxey': { out: 'Joel Embiid', boost: { PTS: 5.5, AST: 2.1 }, note: 'Embiid out — Maxey usage spikes to 32%' },
+  'Desmond Bane': { out: 'Ja Morant', boost: { PTS: 6.1, AST: 3.2 }, note: 'Morant out — Bane handles primary creation' },
+  'Scottie Barnes': { out: 'RJ Barrett', boost: { PTS: 3.8, REB: 1.5 }, note: 'Barrett out — Barnes dominates touches' },
+  'Cade Cunningham': { out: 'Jalen Duren', boost: { PTS: 2.1, AST: 1.4 }, note: 'Duren out — Cunningham gets more paint touches' },
+};
+
+// Generate explanation — the MOAT
+function generateExplanation(pick, teamPlayers) {
+  const { player, statType, line, projection, edge, injury } = pick;
+  const last = player.split(' ').pop();
+  const pct = Math.round((edge / line) * 100);
+  const hitRate = pick.hitRate || 0;
+
+  let explanation = '';
+
+  // Injury boost explanation (highest priority — most actionable)
+  if (injury) {
+    explanation = `${injury.note}. He's cleared this line in ${hitRate} of his last 5 games.`;
+  }
+  // Strong recent form
+  else if (hitRate >= 4) {
+    explanation = `${last} has hit the over on ${statType} ${hitRate}/5 recent games. The matchup tonight ranks ${pick.matchupRank <= 10 ? 'bottom-10' : 'below average'} defending this stat.`;
+  }
+  // Matchup-driven
+  else if (pick.matchupRank && pick.matchupRank <= 8) {
+    explanation = `Opponent ranks #${pick.matchupRank} worst at defending ${statType}. ${last}'s projection is ${pct}% above the line.`;
+  }
+  // Volume-driven
+  else if (edge > 3) {
+    explanation = `${last} is projected at ${projection} ${statType} — ${edge.toFixed(1)} above the line. Minutes have been consistent (${pick.avgMinutes || 34}+ MPG last 5).`;
+  }
+  // Default
+  else {
+    explanation = `${last} projects ${edge > 0 ? 'above' : 'below'} the line at ${projection} ${statType}. ${hitRate >= 3 ? 'Recent trend supports this.' : 'Proceed with caution.'}`;
+  }
+
+  return explanation;
+}
+
+// Confidence score: 1-100
+function calcConfidence(pick) {
+  let score = 50;
+  // Edge magnitude (bigger edge = more confident)
+  score += Math.min(pick.edge * 4, 25);
+  // Hit rate bonus
+  score += (pick.hitRate || 0) * 5;
+  // Matchup bonus (lower rank = worse defense = better for over)
+  if (pick.matchupRank && pick.matchupRank <= 10) score += 10;
+  // Minutes consistency bonus
+  if (pick.minutesConsistency === 'high') score += 8;
+  // Injury boost
+  if (pick.injury) score += 12;
+  return Math.min(Math.round(score), 99);
+}
+
+function DailyPicks() {
+  const { config, teamData } = useTeam();
+  const [emailInput, setEmailInput] = useState('');
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [sortBy, setSortBy] = useState('edge');
+  const [filterStat, setFilterStat] = useState('ALL');
+
+  // Generate mock picks using real player data from all teams
+  const allPicks = useMemo(() => {
+    const today = new Date();
+    const dateStr = `${today.getMonth()+1}/${today.getDate()}`;
+
+    // Use a deterministic seed from the date so picks change daily
+    const daySeed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+    const rng = (i) => {
+      const x = Math.sin(daySeed * 9301 + i * 49297) * 49297;
+      return x - Math.floor(x);
+    };
+
+    // Pull top players from all teams
+    const allTeams = Object.values(TEAM_CONFIGS);
+    const starPlayers = [];
+    allTeams.forEach(t => {
+      if (!t.players) return;
+      t.players.filter(p => p.starter && p.stats.ppg >= 15).forEach(p => {
+        starPlayers.push({ ...p, teamAbbr: t.abbr, teamName: t.name, teamFullName: t.fullName });
+      });
+    });
+
+    // Generate 15 props
+    const statTypes = ['PTS', 'REB', 'AST'];
+    const picks = [];
+    const usedPlayers = new Set();
+
+    for (let i = 0; i < 15 && starPlayers.length > 0; i++) {
+      const idx = Math.floor(rng(i) * starPlayers.length);
+      const p = starPlayers[idx];
+      if (usedPlayers.has(p.name)) { starPlayers.splice(idx, 1); i--; continue; }
+      usedPlayers.add(p.name);
+
+      const statType = statTypes[Math.floor(rng(i + 100) * 3)];
+      const baseStat = statType === 'PTS' ? p.stats.ppg : statType === 'REB' ? p.stats.rpg : p.stats.apg;
+
+      // Generate a realistic sportsbook line (slightly below or at projection)
+      const variance = (rng(i + 200) - 0.4) * 3;
+      const line = Math.round((baseStat + variance) * 2) / 2; // Round to 0.5
+      const projection = +(baseStat + (rng(i + 300) - 0.3) * 2).toFixed(1);
+      const edge = +(projection - line).toFixed(1);
+
+      const matchupRank = Math.floor(rng(i + 400) * 30) + 1;
+      const hitRate = Math.min(5, Math.floor(rng(i + 500) * 6));
+      const minutesConsistency = rng(i + 600) > 0.4 ? 'high' : 'medium';
+      const avgMinutes = Math.floor(30 + rng(i + 700) * 8);
+      const injury = INJURY_REPORT[p.name] || null;
+
+      const pick = {
+        player: p.name, teamAbbr: p.teamAbbr, teamName: p.teamName,
+        headshot: p.headshot, pos: p.pos, statType, line, projection, edge,
+        matchupRank, hitRate, minutesConsistency, avgMinutes, injury,
+        opponent: allTeams[Math.floor(rng(i + 800) * 30)]?.abbr || 'OPP',
+      };
+      pick.confidence = calcConfidence(pick);
+      pick.explanation = generateExplanation(pick, teamData.players);
+      picks.push(pick);
+    }
+
+    return picks.sort((a, b) => b.edge - a.edge);
+  }, []);
+
+  // Filter and sort
+  const filteredPicks = useMemo(() => {
+    let picks = filterStat === 'ALL' ? allPicks : allPicks.filter(p => p.statType === filterStat);
+    if (sortBy === 'edge') picks = [...picks].sort((a, b) => b.edge - a.edge);
+    else if (sortBy === 'confidence') picks = [...picks].sort((a, b) => b.confidence - a.confidence);
+    else if (sortBy === 'line') picks = [...picks].sort((a, b) => b.line - a.line);
+    return picks;
+  }, [allPicks, sortBy, filterStat]);
+
+  const bestPick = allPicks[0];
+  const FREE_LIMIT = 3;
+
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (emailInput.trim()) {
+      // Store locally for now — replace with real backend later
+      const emails = JSON.parse(localStorage.getItem('nbavault_email_list') || '[]');
+      emails.push({ email: emailInput, date: new Date().toISOString() });
+      localStorage.setItem('nbavault_email_list', JSON.stringify(emails));
+      setEmailSubmitted(true);
+    }
+  };
+
+  return (
+    <section className="py-8 px-4 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-3xl md:text-4xl font-black">
+          <span className="text-team-secondary">DAILY</span> PICKS
+        </h2>
+        <p className="text-gray-400 text-sm mt-1">Find profitable betting edges in 60 seconds</p>
+        <p className="text-gray-600 text-xs mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+      </div>
+
+      {/* Best Bet of the Day */}
+      {bestPick && (
+        <div className="rounded-2xl p-5 mb-8 border-2 border-team-secondary/40 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(var(--team-primary-rgb),0.3), rgba(var(--team-midnight-rgb),0.9))' }}>
+          <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-team-secondary text-black text-[10px] font-black">BEST BET</div>
+          <div className="flex items-center gap-4">
+            {bestPick.headshot && (
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-team-secondary/50 shrink-0" style={{ background: 'var(--team-deep)' }}>
+                <img src={bestPick.headshot} alt="" className="w-full h-full object-cover object-top" loading="lazy" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-black text-lg text-white">{bestPick.player}</span>
+                <span className="text-xs text-gray-400">{bestPick.teamAbbr} vs {bestPick.opponent}</span>
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-team-secondary font-black text-2xl">O {bestPick.line} {bestPick.statType}</span>
+                <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">+{bestPick.edge} edge</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `rgba(var(--team-secondary-rgb),${bestPick.confidence/200})`, color: 'var(--team-secondary)' }}>{bestPick.confidence}% conf</span>
+              </div>
+              <p className="text-sm text-gray-300 mt-2 leading-relaxed">{bestPick.explanation}</p>
+              {bestPick.injury && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs">
+                  <span className="text-amber-400">&#9888;</span>
+                  <span className="text-amber-300 font-semibold">Injury boost: {bestPick.injury.out} is OUT</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters + Sort */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex gap-1.5">
+          {['ALL', 'PTS', 'REB', 'AST'].map(s => (
+            <button key={s} onClick={() => setFilterStat(s)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${filterStat === s ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          {[['edge', 'Edge'], ['confidence', 'Confidence'], ['line', 'Line']].map(([k, l]) => (
+            <button key={k} onClick={() => setSortBy(k)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${sortBy === k ? 'bg-team-primary text-white' : 'glass text-gray-500 hover:text-white'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Picks Table */}
+      <div className="glass rounded-2xl overflow-hidden mb-8">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/20 text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+          <div className="col-span-4">Player</div>
+          <div className="col-span-1 text-center">Prop</div>
+          <div className="col-span-1 text-center">Line</div>
+          <div className="col-span-1 text-center">Proj</div>
+          <div className="col-span-1 text-center">Edge</div>
+          <div className="col-span-1 text-center">Conf</div>
+          <div className="col-span-3">Insight</div>
+        </div>
+
+        {/* Table Rows */}
+        {filteredPicks.map((pick, i) => {
+          const isLocked = i >= FREE_LIMIT;
+          const isPositive = pick.edge > 0;
+          return (
+            <div key={i} className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${isLocked ? '' : 'hover:bg-team-primary/5'} ${i === 0 && !isLocked ? 'bg-team-secondary/5' : ''}`}
+              style={isLocked ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
+              {/* Player */}
+              <div className="col-span-4 flex items-center gap-2 min-w-0">
+                {pick.headshot && (
+                  <img src={pick.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{pick.player}</div>
+                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}</div>
+                </div>
+              </div>
+              {/* Prop */}
+              <div className="col-span-1 text-center">
+                <span className="text-xs font-bold text-team-secondary">{pick.statType}</span>
+              </div>
+              {/* Line */}
+              <div className="col-span-1 text-center text-sm text-gray-300 font-mono">{pick.line}</div>
+              {/* Projection */}
+              <div className="col-span-1 text-center text-sm text-white font-bold font-mono">{pick.projection}</div>
+              {/* Edge */}
+              <div className="col-span-1 text-center">
+                <span className={`text-sm font-black ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                  {isPositive ? '+' : ''}{pick.edge}
+                </span>
+              </div>
+              {/* Confidence */}
+              <div className="col-span-1 text-center">
+                <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-black" style={{
+                  background: `conic-gradient(${pick.confidence >= 70 ? '#22c55e' : pick.confidence >= 50 ? 'var(--team-secondary)' : '#ef4444'} ${pick.confidence}%, transparent 0)`,
+                  color: 'white'
+                }}>
+                  {pick.confidence}
+                </div>
+              </div>
+              {/* Insight */}
+              <div className="col-span-3">
+                <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">{pick.explanation}</p>
+                {pick.injury && <span className="text-[9px] text-amber-400 font-bold">&#9888; Injury boost</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Paywall CTA */}
+      <div className="relative -mt-4 mb-8">
+        <div className="glass rounded-2xl p-8 text-center border border-team-secondary/30" style={{ background: 'linear-gradient(180deg, rgba(var(--team-primary-rgb),0.15), rgba(var(--team-midnight-rgb),0.95))' }}>
+          <div className="text-2xl mb-2">&#128274;</div>
+          <h3 className="text-xl font-black text-white mb-2">Unlock All {filteredPicks.length} Picks</h3>
+          <p className="text-gray-400 text-sm mb-4 max-w-md mx-auto">
+            Free users see top 3 picks. Unlock the full board with edge calculations, confidence scores, and injury-boosted plays.
+          </p>
+          <button className="px-8 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
+            Unlock All Picks — $19/month
+          </button>
+          <p className="text-gray-600 text-xs mt-3">Cancel anytime &bull; 7-day free trial</p>
+        </div>
+      </div>
+
+      {/* Betting Trends Summary (from current team's players) */}
+      <div className="glass rounded-2xl p-6 mb-8">
+        <h3 className="text-lg font-bold text-team-secondary mb-4">{config.name} Player Trends</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {teamData.players.filter(p => p.starter).slice(0, 3).map(p => {
+            const seed = p.name.length * 7 + p.stats.ppg;
+            const ptsHit = Math.min(5, Math.floor((seed % 6)));
+            const rebHit = Math.min(5, Math.floor(((seed * 3) % 6)));
+            const homeAvg = +(p.stats.ppg + (seed % 3)).toFixed(1);
+            const awayAvg = +(p.stats.ppg - (seed % 2) - 0.5).toFixed(1);
+            return (
+              <div key={p.name} className="rounded-xl p-4 border border-team-primary/15" style={{ background: 'rgba(var(--team-primary-rgb),0.04)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  {p.headshot && <img src={p.headshot} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" />}
+                  <div>
+                    <div className="text-sm font-bold text-white">{p.name.split(' ').pop()}</div>
+                    <div className="text-[10px] text-gray-500">{p.pos}</div>
+                  </div>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between"><span className="text-gray-400">PTS Over Hit Rate (L5)</span><span className={`font-bold ${ptsHit >= 3 ? 'text-green-400' : 'text-red-400'}`}>{ptsHit}/5</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">REB Over Hit Rate (L5)</span><span className={`font-bold ${rebHit >= 3 ? 'text-green-400' : 'text-red-400'}`}>{rebHit}/5</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Home Avg</span><span className="font-bold text-white">{homeAvg} PPG</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Away Avg</span><span className="font-bold text-white">{awayAvg} PPG</span></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Email Capture */}
+      <div className="glass rounded-2xl p-6 text-center">
+        <h3 className="text-lg font-bold text-white mb-1">Get Today's Best NBA Bets in Your Inbox</h3>
+        <p className="text-gray-400 text-sm mb-4">Free daily email with our top 3 picks, injury alerts, and edge analysis</p>
+        {emailSubmitted ? (
+          <div className="text-green-400 font-bold text-sm py-2">You're in! Check your inbox tomorrow morning.</div>
+        ) : (
+          <form onSubmit={handleEmailSubmit} className="flex gap-2 max-w-md mx-auto">
+            <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="flex-1 bg-gray-900/50 border border-team-primary rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary" />
+            <button type="submit" className="px-6 py-2.5 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap">
+              Subscribe Free
+            </button>
+          </form>
+        )}
+        <p className="text-gray-600 text-xs mt-3">No spam. Unsubscribe anytime.</p>
+      </div>
+    </section>
+  );
+}
+
 function WikiPage() {
   const { config } = useTeam();
   return (
@@ -8039,6 +8388,7 @@ function WikiPage() {
               { feature: 'Fan Poll', desc: '25 team-specific questions across 5 categories with vote tracking, Community Voice summary, consensus analysis, and most-divisive question highlight' },
               { feature: 'Trade Machine', desc: 'Select players to trade, type incoming assets, and get AI-powered analysis with letter grades and GM approval ratings (requires API key)' },
               { feature: 'Lineup Builder', desc: 'Auto-loads starters with headshots, full coach analysis, offensive/defensive ratings, chemistry meter, strengths/weaknesses, and key matchup advantages' },
+              { feature: 'Daily Picks', desc: 'Betting edge engine with player props, edge calculations, confidence scores, injury boosts, and human-readable explanations' },
               { feature: 'Fan Map', desc: 'Geolocation-based visitor tracking with US and world map visualizations and city leaderboards' },
             ].map((f, i) => (
               <div key={i} className="rounded-lg p-3 border border-team-primary/15" style={{ background: 'rgba(var(--team-primary-rgb),0.04)' }}>
@@ -8105,8 +8455,8 @@ function FAQPage() {
 // MAIN APP
 // ============================================================
 const TAB_SLUGS = {
-  'ROSTER': 'roster', 'DRAFT ROOM': 'draft', 'POLL': 'poll',
-  'TRADES': 'trades', 'LINEUPS': 'lineups', 'FAN MAP': 'fanmap',
+  'ROSTER': 'roster', 'DRAFT ROOM': 'draft', 'PICKS': 'daily-picks',
+  'POLL': 'poll', 'TRADES': 'trades', 'LINEUPS': 'lineups', 'FAN MAP': 'fanmap',
   'WIKI': 'wiki', 'FAQ': 'faq'
 };
 const SLUG_TO_TAB = Object.fromEntries(Object.entries(TAB_SLUGS).map(([k, v]) => [v, k]));
@@ -8168,7 +8518,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     return localStorage.getItem('nbavault_selected_team') || 'UTA';
   });
-  const tabs = ['ROSTER', 'DRAFT ROOM', 'POLL', 'TRADES', 'LINEUPS', 'FAN MAP'];
+  const tabs = ['ROSTER', 'DRAFT ROOM', 'PICKS', 'POLL', 'TRADES', 'LINEUPS', 'FAN MAP'];
 
   const navigateTo = useCallback((tab) => {
     setActiveTab(tab);
@@ -8272,6 +8622,7 @@ function App() {
         {activeTab === 'DRAFT ROOM' && <DraftRoom />}
         {activeTab === 'FAN MAP' && <FanMap />}
         {activeTab === 'POLL' && <FanPoll />}
+        {activeTab === 'PICKS' && <DailyPicks />}
         {activeTab === 'TRADES' && <TradeMachine />}
         {activeTab === 'LINEUPS' && <LineupBuilder />}
         {activeTab === 'WIKI' && <WikiPage />}
