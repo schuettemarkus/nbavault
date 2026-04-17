@@ -1,0 +1,16 @@
+{
+  "name": "NBA Vault",
+  "short_name": "NBA Vault",
+  "description": "Find profitable NBA betting edges in 60 seconds",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0014",
+  "theme_color": "#4E008E",
+  "icons": [
+    {
+      "src": "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

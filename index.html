@@ -5,15 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="NBA Vault — Roster breakdowns, mock draft simulator, trade machine, lineup builder, and fan polls for all 30 NBA teams" />
 <meta name="referrer" content="no-referrer" />
-<meta property="og:title" content="NBA Vault — The Ultimate NBA Fan Hub" />
-<meta property="og:description" content="Rosters, mock drafts, trade simulator, lineup builder, and fan polls for all 30 NBA teams. Free, open-source, no account needed." />
+<meta property="og:title" content="NBA Vault — Find Profitable NBA Betting Edges in 60 Seconds" />
+<meta property="og:description" content="Daily player props with edge calculations, confidence scores, injury boosts, and AI insights. Plus rosters, mock drafts, and trade simulator for all 30 teams. Free." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://nbavault.com" />
 <meta property="og:image" content="https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="NBA Vault — The Ultimate NBA Fan Hub" />
-<meta name="twitter:description" content="Rosters, mock drafts, trade simulator, lineup builder, and fan polls for all 30 NBA teams." />
+<meta name="twitter:title" content="NBA Vault — NBA Betting Edge Engine" />
+<meta name="twitter:description" content="Daily player props with edge %, confidence scores, injury boosts. Free picks for all 30 teams." />
 <title>NBA Vault</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#4E008E" />
 <link rel="preconnect" href="https://cdn.nba.com" />
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -8168,64 +8170,79 @@ function DailyPicks() {
         </div>
       </div>
 
-      {/* Picks Table */}
-      <div className="glass rounded-2xl overflow-hidden mb-8">
-        {/* Table Header */}
+      {/* Picks Table — Desktop */}
+      <div className="hidden md:block glass rounded-2xl overflow-hidden mb-8">
         <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/20 text-[10px] text-gray-500 uppercase tracking-wider font-bold">
-          <div className="col-span-4">Player</div>
+          <div className="col-span-3">Player</div>
           <div className="col-span-1 text-center">Prop</div>
           <div className="col-span-1 text-center">Line</div>
           <div className="col-span-1 text-center">Proj</div>
           <div className="col-span-1 text-center">Edge</div>
           <div className="col-span-1 text-center">Conf</div>
-          <div className="col-span-3">Insight</div>
+          <div className="col-span-4">Insight</div>
         </div>
-
-        {/* Table Rows */}
         {filteredPicks.map((pick, i) => {
           const isLocked = i >= FREE_LIMIT;
           const isPositive = pick.edge > 0;
           return (
             <div key={i} className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${isLocked ? '' : 'hover:bg-team-primary/5'} ${i === 0 && !isLocked ? 'bg-team-secondary/5' : ''}`}
               style={isLocked ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
-              {/* Player */}
-              <div className="col-span-4 flex items-center gap-2 min-w-0">
-                {pick.headshot && (
-                  <img src={pick.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />
-                )}
+              <div className="col-span-3 flex items-center gap-2 min-w-0">
+                {pick.headshot && <img src={pick.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-white truncate">{pick.player}</div>
                   <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}</div>
                 </div>
               </div>
-              {/* Prop */}
-              <div className="col-span-1 text-center">
-                <span className="text-xs font-bold text-team-secondary">{pick.statType}</span>
-              </div>
-              {/* Line */}
+              <div className="col-span-1 text-center"><span className="text-xs font-bold text-team-secondary">{pick.statType}</span></div>
               <div className="col-span-1 text-center text-sm text-gray-300 font-mono">{pick.line}</div>
-              {/* Projection */}
               <div className="col-span-1 text-center text-sm text-white font-bold font-mono">{pick.projection}</div>
-              {/* Edge */}
-              <div className="col-span-1 text-center">
-                <span className={`text-sm font-black ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                  {isPositive ? '+' : ''}{pick.edge}
-                </span>
-              </div>
-              {/* Confidence */}
+              <div className="col-span-1 text-center"><span className={`text-sm font-black ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? '+' : ''}{pick.edge}</span></div>
               <div className="col-span-1 text-center">
                 <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-black" style={{
-                  background: `conic-gradient(${pick.confidence >= 70 ? '#22c55e' : pick.confidence >= 50 ? 'var(--team-secondary)' : '#ef4444'} ${pick.confidence}%, transparent 0)`,
-                  color: 'white'
-                }}>
-                  {pick.confidence}
-                </div>
+                  background: `conic-gradient(${pick.confidence >= 70 ? '#22c55e' : pick.confidence >= 50 ? 'var(--team-secondary)' : '#ef4444'} ${pick.confidence}%, transparent 0)`, color: 'white'
+                }}>{pick.confidence}</div>
               </div>
-              {/* Insight */}
-              <div className="col-span-3">
-                <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">{pick.explanation}</p>
+              <div className="col-span-4">
+                <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
                 {pick.injury && <span className="text-[9px] text-amber-400 font-bold">&#9888; Injury boost</span>}
               </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Picks Cards — Mobile */}
+      <div className="md:hidden space-y-3 mb-8">
+        {filteredPicks.map((pick, i) => {
+          const isLocked = i >= FREE_LIMIT;
+          const isPositive = pick.edge > 0;
+          return (
+            <div key={i} className={`glass rounded-xl p-4 ${i === 0 && !isLocked ? 'border border-team-secondary/40' : ''}`}
+              style={isLocked ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
+              <div className="flex items-center gap-3 mb-3">
+                {pick.headshot && <img src={pick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white truncate">{pick.player}</div>
+                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-team-secondary font-black text-sm">O {pick.line} {pick.statType}</div>
+                  <div className={`text-xs font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? '+' : ''}{pick.edge} edge</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-500">Proj</span>
+                  <span className="text-white font-bold">{pick.projection}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-500">Conf</span>
+                  <span className={`font-bold ${pick.confidence >= 70 ? 'text-green-400' : pick.confidence >= 50 ? 'text-team-secondary' : 'text-red-400'}`}>{pick.confidence}%</span>
+                </div>
+                {pick.injury && <span className="text-[10px] text-amber-400 font-bold">&#9888; Injury boost</span>}
+              </div>
+              <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
             </div>
           );
         })}
@@ -8245,6 +8262,21 @@ function DailyPicks() {
           <p className="text-gray-600 text-xs mt-3">Cancel anytime &bull; 7-day free trial</p>
         </div>
       </div>
+
+      {/* Share Best Bet */}
+      {bestPick && (
+        <div className="flex justify-center gap-3 mb-8">
+          <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Today's best NBA bet: ${bestPick.player} O ${bestPick.line} ${bestPick.statType} (+${bestPick.edge} edge, ${bestPick.confidence}% confidence)\n\n${bestPick.explanation}\n\nFree daily picks at nbavault.com`)}`}
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass text-white text-sm font-semibold hover:bg-team-primary/20 transition-all">
+            Share on X/Twitter
+          </a>
+          <button onClick={() => { navigator.clipboard?.writeText(`Today's best NBA bet: ${bestPick.player} O ${bestPick.line} ${bestPick.statType} (+${bestPick.edge} edge) — nbavault.com`); }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass text-gray-400 text-sm font-semibold hover:text-white transition-all">
+            Copy Link
+          </button>
+        </div>
+      )}
 
       {/* Betting Trends Summary (from current team's players) */}
       <div className="glass rounded-2xl p-6 mb-8">
@@ -8474,7 +8506,8 @@ function WelcomeModal({ onSelect }) {
       <div className="w-full max-w-2xl mx-4 my-auto rounded-2xl p-5 md:p-8 border border-team-primary/40 animate-fade-in" style={{ background: 'linear-gradient(135deg, #1A0030, #0A0014)' }}>
         <div className="text-center mb-4 md:mb-6">
           <h2 className="text-2xl md:text-3xl font-black text-white mb-1">Welcome to <span className="text-team-secondary">NBA Vault</span></h2>
-          <p className="text-gray-400 text-xs md:text-sm">Pick your home team to personalize your experience</p>
+          <p className="text-gray-400 text-xs md:text-sm">Rosters, mock drafts, betting edges, and more for every NBA team</p>
+          <p className="text-team-secondary text-[10px] font-bold mt-1">Pick your team to get started</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
           <div>
@@ -8607,8 +8640,8 @@ function App() {
           <div className="flex items-center justify-center gap-1 py-2 px-3 min-w-max mx-auto">
             {tabs.map(tab => (
               <button key={tab} onClick={() => navigateTo(tab)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === tab ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/20' : 'text-gray-400 hover:text-white hover:bg-team-primary/30'}`}>
-                {tab}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === tab ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/20' : 'text-gray-400 hover:text-white hover:bg-team-primary/30'} ${tab === 'PICKS' && activeTab !== tab ? 'ring-1 ring-green-500/40 text-green-400' : ''}`}>
+                {tab === 'PICKS' ? 'PICKS' : tab}
               </button>
             ))}
           </div>
