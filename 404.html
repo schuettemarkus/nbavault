@@ -9229,7 +9229,7 @@ function DailyPicks() {
                   </div>
                   <span className="text-xs font-black text-team-secondary">O {leg.line} {leg.statType}</span>
                   <span className="text-[10px] text-green-400 font-bold">+{leg.edge}</span>
-                  {parlayLegs.length > 2 && (
+                  {activeLegIds.length > 2 && (
                     <button onClick={() => removeLeg(leg.id)} className="text-gray-600 hover:text-red-400 text-xs transition-colors ml-1" title="Remove">x</button>
                   )}
                 </div>

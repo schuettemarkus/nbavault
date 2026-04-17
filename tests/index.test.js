@@ -490,6 +490,13 @@ describe('Parlay Builder', () => {
   test('parlay penalizes low confidence legs', () => {
     expect(scriptContent).toContain("if (pick.confidence < 40) score -= 8");
   });
+
+  test('parlay never accesses .length on parlayLegs directly (can be null)', () => {
+    // parlayLegs state is initialized as null — must use activeLegIds instead
+    expect(scriptContent).not.toContain('parlayLegs.length');
+    expect(scriptContent).not.toContain('parlayLegs.map');
+    expect(scriptContent).not.toContain('parlayLegs.filter');
+  });
 });
 
 // ============================================================
