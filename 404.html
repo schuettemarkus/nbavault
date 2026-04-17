@@ -8787,7 +8787,7 @@ function DailyPicks() {
 
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="font-black text-xl md:text-2xl text-white">{bestPick.player}</span>
-                <span className="text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded">{bestPick.teamAbbr} vs {bestPick.opponent}{bestPick.gameStatus ? ` · ${bestPick.gameStatus}` : bestPick.gameTime ? ` · ${formatGameDateTime(bestPick.gameTime)}` : ''}</span>
+                <span className="text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded">{bestPick.teamAbbr} vs {bestPick.opponent}{bestPick.gameTime ? ` · ${formatGameDateTime(bestPick.gameTime)}` : bestPick.gameStatus ? ` · ${bestPick.gameStatus}` : ''}</span>
               </div>
 
               <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -8884,7 +8884,7 @@ function DailyPicks() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{(pick.teamAbbr === homeTeam || pick.opponent === homeTeam) ? ' ★' : ''}{pick.gameStatus ? ` · ${pick.gameStatus}` : pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : ''}</div>
+                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{(pick.teamAbbr === homeTeam || pick.opponent === homeTeam) ? ' ★' : ''}{pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : pick.gameStatus ? ` · ${pick.gameStatus}` : ''}</div>
                 </div>
               </div>
               <div className="col-span-1 text-center"><span className="text-xs font-bold text-team-secondary">{pick.statType}</span></div>
@@ -8938,7 +8938,7 @@ function DailyPicks() {
                 {pick.headshot && <img src={pick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white truncate flex items-center gap-1">{pick.player}{gameLocked && !live && <span className="text-[10px] text-gray-500">&#128274;</span>}</div>
-                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{pick.gameStatus ? ` · ${pick.gameStatus}` : pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : ''}</div>
+                  <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : pick.gameStatus ? ` · ${pick.gameStatus}` : ''}</div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-team-secondary font-black text-sm">O {pick.line} {pick.statType}</div>
