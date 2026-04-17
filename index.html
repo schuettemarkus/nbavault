@@ -8182,7 +8182,7 @@ function DailyPicks() {
           <div className="col-span-1 text-center">Conf</div>
           <div className="col-span-4">Insight</div>
         </div>
-        {filteredPicks.map((pick, i) => {
+        {filteredPicks.slice(0, FREE_LIMIT + 2).map((pick, i) => {
           const isLocked = i >= FREE_LIMIT;
           const isPositive = pick.edge > 0;
           return (
@@ -8215,7 +8215,7 @@ function DailyPicks() {
 
       {/* Picks Cards — Mobile */}
       <div className="md:hidden space-y-3 mb-8">
-        {filteredPicks.map((pick, i) => {
+        {filteredPicks.slice(0, FREE_LIMIT + 1).map((pick, i) => {
           const isLocked = i >= FREE_LIMIT;
           const isPositive = pick.edge > 0;
           return (
