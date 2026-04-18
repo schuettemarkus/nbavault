@@ -666,21 +666,23 @@ const JAZZ_PROSPECTS = [
 // ============================================================
 // Lottery teams with real 2026 odds (percentage chance at #1 pick)
 // Based on inverse record — worst record = best odds
+// 2025-26 lottery teams — end-of-regular-season data
+// Sources: tankathon.com, basketball-reference.com, cbssports.com
 const JAZZ_LOTTERY_TEAMS = [
-  { team: 'WAS Wizards', record: '17-65', odds: 14.0, need: 'Franchise player' },
-  { team: 'IND Pacers', record: '19-63', odds: 14.0, need: 'Haliburton complement' },
-  { team: 'BKN Nets', record: '20-62', odds: 14.0, need: 'Star rebuild piece' },
+  { team: 'WAS Wizards', record: '17-65', odds: 14.0, need: 'Franchise cornerstone' },
+  { team: 'IND Pacers', record: '19-63', odds: 14.0, need: 'Replace Haliburton (torn Achilles)' },
+  { team: 'BKN Nets', record: '20-62', odds: 14.0, need: 'Star rebuild piece around MPJ' },
   { team: 'UTAH JAZZ', record: '22-60', odds: 11.5, need: 'Complete the core' },
-  { team: 'SAC Kings', record: '22-60', odds: 11.5, need: 'Fox/Sabonis wing help' },
-  { team: 'MEM Grizzlies', record: '25-57', odds: 9.0, need: 'Ja Morant support' },
-  { team: 'NOP Pelicans', record: '26-56', odds: 6.8, need: 'Complement Zion' },
-  { team: 'DAL Mavericks', record: '26-56', odds: 6.7, need: 'Luka supporting cast' },
-  { team: 'CHI Bulls', record: '31-51', odds: 4.5, need: 'Young talent infusion' },
-  { team: 'MIL Bucks', record: '32-50', odds: 3.0, need: 'Giannis help' },
-  { team: 'GSW Warriors', record: '37-45', odds: 2.0, need: 'Post-Steph transition' },
-  { team: 'LAC Clippers', record: '42-40', odds: 1.5, need: 'Roster refresh' },
-  { team: 'MIA Heat', record: '43-39', odds: 1.0, need: 'Culture addition' },
-  { team: 'CHA Hornets', record: '44-38', odds: 0.5, need: 'LaMelo running mate' },
+  { team: 'SAC Kings', record: '22-60', odds: 11.5, need: 'Sabonis/LaVine wing help' },
+  { team: 'MEM Grizzlies', record: '25-57', odds: 9.0, need: 'Ja Morant support wing' },
+  { team: 'NOP Pelicans', record: '26-56', odds: 6.8, need: 'Complement Zion/Murphy' },
+  { team: 'DAL Mavericks', record: '26-56', odds: 6.7, need: 'Post-Luka rebuild around Flagg/AD' },
+  { team: 'CHI Bulls', record: '31-51', odds: 4.5, need: 'Young talent (post-LaVine trade)' },
+  { team: 'MIL Bucks', record: '32-50', odds: 3.0, need: 'Giannis supporting cast' },
+  { team: 'GSW Warriors', record: '37-45', odds: 2.0, need: 'Post-Steph transition scorer' },
+  { team: 'LAC Clippers', record: '42-40', odds: 1.5, need: 'Rebuild post-Harden/Zubac trades' },
+  { team: 'MIA Heat', record: '43-39', odds: 1.0, need: 'Culture wing next to Powell/Herro' },
+  { team: 'CHA Hornets', record: '44-38', odds: 0.5, need: 'LaMelo/Miller running mate' },
 ];
 
 // Simulate lottery using weighted random selection
