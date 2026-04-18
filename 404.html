@@ -676,7 +676,7 @@ const JAZZ_LOTTERY_TEAMS = [
   { team: 'SAC Kings', record: '22-60', odds: 11.5, need: 'Sabonis/LaVine wing help' },
   { team: 'MEM Grizzlies', record: '25-57', odds: 9.0, need: 'Ja Morant support wing' },
   { team: 'NOP Pelicans', record: '26-56', odds: 6.8, need: 'Complement Zion/Murphy' },
-  { team: 'DAL Mavericks', record: '26-56', odds: 6.7, need: 'Post-Luka rebuild around Flagg/AD' },
+  { team: 'DAL Mavericks', record: '26-56', odds: 6.7, need: 'Build around Flagg/Kyrie' },
   { team: 'CHI Bulls', record: '31-51', odds: 4.5, need: 'Young talent (post-LaVine trade)' },
   { team: 'MIL Bucks', record: '32-50', odds: 3.0, need: 'Giannis supporting cast' },
   { team: 'GSW Warriors', record: '37-45', odds: 2.0, need: 'Post-Steph transition scorer' },
@@ -7762,15 +7762,17 @@ function InteractiveDraftSim() {
     setTeamPickNum(teamSlot >= 0 ? teamSlot + 1 : 7 + Math.floor(Math.random() * 8));
     setPhase('lottery');
     setLotteryRevealed(0);
-    // Dramatic reveal: one team at a time, bottom-up
+    // Dramatic reveal: progressively slower — builds tension toward #1
+    // Pick 14: 400ms, Pick 10: 700ms, Pick 5: 1200ms, Pick 2: 2200ms, Pick 1: 3000ms
     let i = 14;
     const reveal = () => {
       if (i <= 0) return;
       i--;
       setLotteryRevealed(14 - i);
-      setTimeout(reveal, i <= 4 ? 1200 : 400); // Slower for top 4
+      const delay = i <= 1 ? 3000 : i <= 2 ? 2200 : i <= 3 ? 1800 : i <= 5 ? 1200 : i <= 8 ? 700 : 400;
+      setTimeout(reveal, delay);
     };
-    setTimeout(reveal, 800);
+    setTimeout(reveal, 1000);
   }
 
   // Advance one pick
@@ -8430,16 +8432,61 @@ function InteractiveDraftSim() {
                 <span className="text-xs text-team-secondary animate-pulse font-bold">Simulating picks...</span>
               )}
             </div>
-            <div className="space-y-1.5">
-              {picks.map((p, i) => (
-                <div key={i} className={`flex items-center gap-2 text-xs py-2 px-3 rounded-lg ${p.player.rank === userSelection.rank ? 'bg-team-secondary/10 border border-team-secondary/20' : 'bg-white/[0.02]'}`}>
-                  <span className="font-black text-team-secondary w-6 text-center">{p.pick}</span>
-                  <span className="text-gray-400 truncate flex-1" style={{ maxWidth: '120px' }}>{p.team}</span>
-                  <span className={`font-bold flex-1 ${p.player.rank === userSelection.rank ? 'text-team-secondary' : 'text-white'}`}>{p.player.name}</span>
-                  <span className="text-gray-500">{p.player.pos}</span>
-                  <span className={`font-black w-6 text-center ${p.grade.color}`}>{p.grade.grade}</span>
-                </div>
-              ))}
+            <div className="space-y-1">
+              {picks.map((p, i) => {
+                const isUser = p.player.rank === userSelection.rank;
+                const isExpanded = expandedPick === p.pick;
+                const value = p.player.rank - p.pick;
+                const valueLabel = value >= 3 ? 'Steal' : value >= 0 ? 'Fair' : value >= -3 ? 'Reach' : 'Big Reach';
+                return (
+                  <div key={i}>
+                    <div className={`flex items-center gap-2 text-xs py-2.5 px-3 rounded-lg cursor-pointer transition-all hover:bg-white/[0.03] ${isUser ? 'bg-team-secondary/10 border border-team-secondary/20' : 'bg-white/[0.02]'}`}
+                      onClick={() => setExpandedPick(isExpanded ? null : p.pick)}>
+                      <span className="font-black text-team-secondary w-6 text-center">{p.pick}</span>
+                      <span className="text-gray-400 truncate" style={{ width: '90px' }}>{p.team}</span>
+                      <span className={`font-bold flex-1 ${isUser ? 'text-team-secondary' : 'text-white'}`}>{p.player.name}</span>
+                      <span className="text-gray-500 w-8">{p.player.pos}</span>
+                      <span className={`font-black w-7 text-center ${p.grade.color}`}>{p.grade.grade}</span>
+                      <svg className={`w-3 h-3 text-gray-600 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    {isExpanded && !isUser && (
+                      <div className="rounded-b-lg px-4 py-3 -mt-0.5 border-t border-white/[0.04] animate-fade-in" style={{ background: 'rgba(var(--team-primary-rgb),0.03)' }}>
+                        <div className="flex gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className={`text-xs font-black ${p.grade.color}`}>{p.grade.grade}</span>
+                              <span className="text-[10px] text-gray-500">{p.grade.label}</span>
+                              <span className="text-[10px] text-gray-600">·</span>
+                              <span className={`text-[10px] font-bold ${value >= 0 ? 'text-green-400' : 'text-orange-400'}`}>{valueLabel}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 leading-relaxed mb-1.5">{p.player.school} · {p.player.height} · {p.player.stars} stars</p>
+                            <div className="flex gap-3 text-[10px]">
+                              <span className="text-gray-300"><span className="text-team-secondary font-bold">{p.player.stats.ppg}</span> PPG</span>
+                              <span className="text-gray-300"><span className="text-team-secondary font-bold">{p.player.stats.rpg}</span> RPG</span>
+                              <span className="text-gray-300"><span className="text-team-secondary font-bold">{p.player.stats.apg}</span> APG</span>
+                            </div>
+                            <div className="mt-1.5 text-[10px] text-gray-500">
+                              <span className="text-gray-400">Why this pick:</span> {p.need || 'Best player available'} — {p.player.strengths[0].substring(0, 60)}
+                            </div>
+                            {p.player.comps && (
+                              <div className="mt-1 flex gap-1">
+                                {p.player.comps.map((c, ci) => (
+                                  <span key={ci} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-500">Comp: {c}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="shrink-0 w-24">
+                            <PlayerRadar data={p.player.radar} size={96} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
