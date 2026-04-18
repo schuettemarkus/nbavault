@@ -7614,22 +7614,77 @@ function TradeCenter() {
     return { grade: 'D', color: 'text-red-400' };
   }
 
-  // Identify team needs
-  function getNeeds() {
-    const starters = players.filter(p => p.starter);
+  // Identify team needs — always returns at least 3
+  function getNeeds(teamPlayers) {
+    const roster = teamPlayers || players;
+    const starters = roster.filter(p => p.starter);
+    const all = roster;
     const needs = [];
     const posMap = {};
     ['PG', 'SG', 'SF', 'PF', 'C'].forEach(pos => {
       posMap[pos] = starters.filter(p => p.pos.includes(pos));
     });
-    const topPPG = Math.max(...starters.map(p => p.stats.ppg));
-    if (topPPG < 22) needs.push({ type: 'Scoring', desc: 'Need a go-to scorer (22+ PPG)', priority: 'high' });
-    if (!posMap.PG.length || posMap.PG.every(p => p.stats.apg < 5)) needs.push({ type: 'Playmaker', desc: 'Need a primary ball-handler', priority: 'high' });
-    if (!posMap.C.length || posMap.C.every(p => p.stats.rpg < 7)) needs.push({ type: 'Rim Protector', desc: 'Need a rebounding center', priority: 'medium' });
-    const totalThreePct = starters.filter(p => p.stats.threePct > 0).reduce((s, p) => s + p.stats.threePct, 0) / Math.max(starters.filter(p => p.stats.threePct > 0).length, 1);
-    if (totalThreePct < 35) needs.push({ type: '3PT Shooting', desc: 'Need floor spacing (35%+ 3PT)', priority: 'medium' });
-    if (needs.length === 0) needs.push({ type: 'Depth', desc: 'Roster is solid — add depth', priority: 'low' });
-    return needs;
+    const topPPG = starters.length > 0 ? Math.max(...starters.map(p => p.stats.ppg)) : 0;
+    const totalPPG = starters.reduce((s, p) => s + p.stats.ppg, 0);
+    const avgPPG = starters.length > 0 ? totalPPG / starters.length : 0;
+    const totalAPG = starters.reduce((s, p) => s + (p.stats.apg || 0), 0);
+    const totalRPG = starters.reduce((s, p) => s + (p.stats.rpg || 0), 0);
+    const shooters = starters.filter(p => (p.stats.threePct || 0) >= 36);
+    const avgThree = starters.filter(p => p.stats.threePct > 0).reduce((s, p) => s + p.stats.threePct, 0) / Math.max(starters.filter(p => p.stats.threePct > 0).length, 1);
+    const benchDepth = all.filter(p => !p.starter && p.stats.ppg >= 8).length;
+
+    // Scoring
+    if (topPPG < 22) needs.push({ type: 'Go-To Scorer', desc: `Best scorer at ${topPPG.toFixed(1)} PPG — need a 22+ PPG alpha`, priority: 'high' });
+    else if (topPPG < 26) needs.push({ type: 'Second Scorer', desc: `Only one 20+ PPG scorer — need a reliable #2 option`, priority: 'medium' });
+
+    // Playmaking
+    if (!posMap.PG.length || posMap.PG.every(p => (p.stats.apg || 0) < 5))
+      needs.push({ type: 'Playmaker', desc: 'No primary ball-handler averaging 5+ APG', priority: 'high' });
+    else if (totalAPG < 18)
+      needs.push({ type: 'Playmaking Depth', desc: `Team-wide ${totalAPG.toFixed(0)} APG — need more creation`, priority: 'medium' });
+
+    // Rim protection / rebounding
+    if (!posMap.C.length || posMap.C.every(p => (p.stats.rpg || 0) < 7))
+      needs.push({ type: 'Rim Protector', desc: 'No center averaging 7+ RPG', priority: 'high' });
+    else if (totalRPG < 22)
+      needs.push({ type: 'Rebounding', desc: `Team rebounds at ${totalRPG.toFixed(0)} RPG — below league avg`, priority: 'medium' });
+
+    // Shooting
+    if (avgThree < 34)
+      needs.push({ type: '3PT Shooting', desc: `Team averaging ${avgThree.toFixed(1)}% from 3 — need floor spacing`, priority: 'high' });
+    else if (shooters.length < 2)
+      needs.push({ type: 'Spacing', desc: `Only ${shooters.length} reliable shooter(s) — need more 36%+ threats`, priority: 'medium' });
+
+    // Wing depth
+    const wings = starters.filter(p => p.pos.includes('SF') || p.pos.includes('SG'));
+    if (wings.length < 2)
+      needs.push({ type: '3-and-D Wing', desc: 'Thin on the wing — need a two-way forward', priority: 'medium' });
+
+    // Bench depth
+    if (benchDepth < 3)
+      needs.push({ type: 'Bench Depth', desc: `Only ${benchDepth} bench players averaging 8+ PPG`, priority: 'medium' });
+
+    // Defense (rough proxy: low RPG + no defensive badges)
+    const defenders = starters.filter(p => p.badge === 'DPOY' || (p.radar && p.radar.Defense >= 70));
+    if (defenders.length === 0)
+      needs.push({ type: 'Defensive Anchor', desc: 'No elite defenders on the roster', priority: 'medium' });
+
+    // Youth / veteran balance
+    const vets = all.filter(p => p.badge === 'VETERAN' || p.badge === 'ALL-STAR');
+    if (vets.length === 0 && avgPPG < 18)
+      needs.push({ type: 'Veteran Leadership', desc: 'Young roster — need an experienced stabilizer', priority: 'low' });
+
+    // Always ensure at least 3 needs
+    if (needs.length < 3) {
+      const fillers = [
+        { type: 'Roster Flexibility', desc: 'Add tradeable contracts for future flexibility', priority: 'low' },
+        { type: 'Draft Capital', desc: 'Accumulate future picks for long-term building', priority: 'low' },
+        { type: 'Culture Fit', desc: 'Add high-character players who elevate the locker room', priority: 'low' },
+      ];
+      while (needs.length < 3) needs.push(fillers[needs.length - needs.length]);
+    }
+
+    return needs.slice(0, 5); // Cap at 5 to keep it focused
   }
 
   // Generate suggested trades based on team needs
@@ -8324,27 +8379,52 @@ function InteractiveDraftSim() {
     setTimeout(() => setShowConfetti(false), 4000);
   }
 
-  // Continue draft after user's pick — simulate remaining picks
+  // Non-lottery teams for picks 15-30 (playoff teams, reverse seed order)
+  const NON_LOTTERY_PICKS = [
+    { team: 'POR Trail Blazers', need: 'Young wing scorer' },
+    { team: 'TOR Raptors', need: 'Defensive wing' },
+    { team: 'ATL Hawks', need: 'Post-Young rebuild' },
+    { team: 'HOU Rockets', need: 'KD complement wing' },
+    { team: 'PHI 76ers', need: 'Depth behind Maxey/Embiid' },
+    { team: 'SAS Spurs', need: 'Fox/Wemby supporting cast' },
+    { team: 'LAL Lakers', need: 'Luka/LeBron role player' },
+    { team: 'MIN Timberwolves', need: 'Edwards complement' },
+    { team: 'DEN Nuggets', need: 'Jokic/Murray wing help' },
+    { team: 'NYK Knicks', need: 'Brunson/KAT depth' },
+    { team: 'BOS Celtics', need: 'Tatum/Brown complement' },
+    { team: 'CLE Cavaliers', need: 'Mitchell/Harden depth' },
+    { team: 'ORL Magic', need: 'Banchero/Wagner help' },
+    { team: 'DET Pistons', need: 'Cade wingman' },
+    { team: 'MIA Heat', need: 'Culture wing' },
+    { team: 'OKC Thunder', need: 'SGA supporting cast' },
+  ];
+
+  // Continue draft after user's pick — simulate through full first round
   function continueDraft() {
     setContinuingDraft(true);
     let a = [...available];
     let p = [...picks];
     let pick = currentPick;
+    const maxPick = Math.min(30, prospects.length);
     const runNext = () => {
-      if (pick > 14 || pick > lotteryOrder.length) { setContinuingDraft(false); return; }
-      const team = lotteryOrder[pick - 1];
+      if (pick > maxPick || a.length === 0) { setContinuingDraft(false); return; }
+      const team = pick <= 14
+        ? lotteryOrder[pick - 1]
+        : { team: NON_LOTTERY_PICKS[pick - 15]?.team || `Pick #${pick}`, need: NON_LOTTERY_PICKS[pick - 15]?.need || 'Best available' };
       if (!team) { setContinuingDraft(false); return; }
       const abbr = team.team.split(' ')[0];
       const selected = aiPick(a, abbr, pick);
       if (!selected) { setContinuingDraft(false); return; }
       const grade = getDraftGrade(selected, pick);
+      const { needs: teamNeeds, posNeeds } = getTeamNeeds(abbr);
+      const fillsNeed = posNeeds.some(n => selected.pos.split('/').includes(n));
       a = a.filter(pr => pr.rank !== selected.rank);
-      p = [...p, { ...team, pick, player: selected, grade }];
+      p = [...p, { ...team, pick, player: selected, grade, abbr, teamNeeds, fillsNeed }];
       setPicks([...p]);
       setAvailable([...a]);
       setCurrentPick(pick + 1);
       pick++;
-      setTimeout(runNext, 800);
+      setTimeout(runNext, 600);
     };
     setTimeout(runNext, 500);
   }
@@ -8952,10 +9032,10 @@ function InteractiveDraftSim() {
           <div className="glass rounded-xl p-5 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-black text-white">Draft Board</h3>
-              {picks.length < 14 && !continuingDraft && (
+              {picks.length < Math.min(30, prospects.length) && !continuingDraft && (
                 <button onClick={continueDraft}
                   className="px-4 py-1.5 rounded-lg bg-team-secondary text-black font-bold text-xs hover:opacity-90 transition-all">
-                  Continue Draft →
+                  Continue Round 1 →
                 </button>
               )}
               {continuingDraft && (
