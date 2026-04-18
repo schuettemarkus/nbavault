@@ -10500,11 +10500,10 @@ function DailyPicks() {
     const playingTeams = new Set();
     games.forEach(g => { playingTeams.add(g.home); playingTeams.add(g.away); });
 
-    // Filter out invalid games: same team vs itself, already final, or missing team data
+    // Filter out invalid games: same team vs itself, or missing team data
+    // Keep today's final games — they still need picks shown + auto-resolved
     const validGames = games.filter(g => {
-      if (!g.home || !g.away || g.home === g.away) return false; // Invalid matchup
-      if (g.isFinal) return false; // Already completed
-      // Verify both teams exist in our configs
+      if (!g.home || !g.away || g.home === g.away) return false;
       if (!TEAM_CONFIGS[g.home]?.players || !TEAM_CONFIGS[g.away]?.players) return false;
       return true;
     });
