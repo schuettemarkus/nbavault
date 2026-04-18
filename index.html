@@ -8953,7 +8953,27 @@ function calibrateWeights(engine) {
 // ---- Live Schedule Data ----
 // Fetch real NBA schedule. Falls back to deterministic schedule if API unavailable.
 const NBA_SCOREBOARD_URL = 'https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json';
-const CORS_PROXY = 'https://corsproxy.io/?';
+// CORS proxies — fallback chain in case one is down/blocked
+const CORS_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://cors-anywhere.herokuapp.com/',
+];
+let activeCorsProxy = CORS_PROXIES[0];
+
+async function fetchWithCorsProxy(url) {
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const resp = await fetch(proxyUrl);
+      if (resp.ok) {
+        activeCorsProxy = proxy; // Remember working proxy
+        return resp;
+      }
+    } catch {}
+  }
+  return null;
+}
 
 // NBA team tricode -> our abbr mapping
 const TRICODE_MAP = {
@@ -8984,8 +9004,8 @@ async function fetchTodaysGames() {
   } catch {}
 
   try {
-    const resp = await fetch(CORS_PROXY + encodeURIComponent(NBA_SCOREBOARD_URL));
-    if (!resp.ok) throw new Error('API failed');
+    const resp = await fetchWithCorsProxy(NBA_SCOREBOARD_URL);
+    if (!resp) throw new Error('All CORS proxies failed');
     const data = await resp.json();
     const games = (data.scoreboard?.games || []).map(g => ({
       gameId: g.gameId,
@@ -9025,8 +9045,8 @@ async function fetchLiveBoxScores(games) {
   await Promise.allSettled(liveGames.map(async (game) => {
     try {
       const url = `https://cdn.nba.com/static/json/liveData/boxscore/boxscore_${game.gameId}.json`;
-      const resp = await fetch(CORS_PROXY + encodeURIComponent(url));
-      if (!resp.ok) return;
+      const resp = await fetchWithCorsProxy(url);
+      if (!resp) return;
       const data = await resp.json();
       const allPlayers = [
         ...(data.game?.homeTeam?.players || []),
