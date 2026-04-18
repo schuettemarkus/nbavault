@@ -7649,7 +7649,813 @@ function TradeMachine() {
 }
 
 // ============================================================
-// SECTION: DRAFT SIMULATOR (lottery odds-based)
+// SECTION: INTERACTIVE DRAFT SIMULATOR (full experience)
+// ============================================================
+function InteractiveDraftSim() {
+  const { config, teamData } = useTeam();
+  const prospects = teamData.prospects;
+  const lotteryTeams = teamData.lotteryTeams;
+
+  // States
+  const [phase, setPhase] = useState('setup'); // setup, lottery, picking, userPick, review
+  const [lotteryOrder, setLotteryOrder] = useState([]);
+  const [picks, setPicks] = useState([]);
+  const [available, setAvailable] = useState([...prospects]);
+  const [currentPick, setCurrentPick] = useState(1);
+  const [teamPickNum, setTeamPickNum] = useState(4);
+  const [userSelection, setUserSelection] = useState(null);
+  const [expandedPick, setExpandedPick] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [lotteryRevealed, setLotteryRevealed] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [tradeUp, setTradeUp] = useState(false);
+  const [compareMode, setCompareMode] = useState(null);
+
+  const teamFullName = config.fullName.toUpperCase();
+  const teamEntry = lotteryTeams.find(t => t.team.includes(config.name.toUpperCase()) || t.team.includes(config.abbr));
+  const teamLotteryName = teamEntry?.team || teamFullName;
+
+  // Draft grade based on prospect rank vs pick position
+  function getDraftGrade(prospect, pickNum) {
+    const value = prospect.rank - pickNum; // negative = reach, positive = steal
+    if (value >= 5) return { grade: 'A+', label: 'Absolute Steal', color: 'text-green-400' };
+    if (value >= 3) return { grade: 'A', label: 'Great Value', color: 'text-green-400' };
+    if (value >= 1) return { grade: 'A-', label: 'Solid Pick', color: 'text-green-400' };
+    if (value >= 0) return { grade: 'B+', label: 'Right on Board', color: 'text-team-secondary' };
+    if (value >= -2) return { grade: 'B', label: 'Slight Reach', color: 'text-team-secondary' };
+    if (value >= -4) return { grade: 'C+', label: 'Moderate Reach', color: 'text-yellow-400' };
+    if (value >= -6) return { grade: 'C', label: 'Significant Reach', color: 'text-orange-400' };
+    return { grade: 'D', label: 'Major Reach', color: 'text-red-400' };
+  }
+
+  // Generate team need analysis
+  function getTeamNeeds(teamAbbr) {
+    const tc = TEAM_CONFIGS[teamAbbr];
+    if (!tc || !tc.players) return { needs: ['Best Player Available'], posNeeds: [] };
+    const starters = tc.players.filter(p => p.starter);
+    const posMap = {};
+    starters.forEach(p => {
+      const pos = p.pos.split('/')[0];
+      posMap[pos] = (posMap[pos] || 0) + 1;
+    });
+    const needs = [];
+    const posNeeds = [];
+    if (!posMap['PG']) { needs.push('Primary ball-handler'); posNeeds.push('PG'); }
+    if (!posMap['SG'] && !posMap['SF']) { needs.push('Wing scoring'); posNeeds.push('SG', 'SF'); }
+    if (!posMap['PF'] && !posMap['C']) { needs.push('Frontcourt presence'); posNeeds.push('PF', 'C'); }
+    // Check for scoring gaps
+    const topScorer = starters.reduce((max, p) => p.stats.ppg > max ? p.stats.ppg : max, 0);
+    if (topScorer < 20) needs.push('Go-to scorer');
+    if (needs.length === 0) needs.push('Best Player Available');
+    return { needs, posNeeds };
+  }
+
+  // AI pick logic — scores each prospect by value + team fit
+  function aiPick(avail, teamAbbr, pickNum) {
+    if (avail.length === 0) return null;
+    const { posNeeds, needs } = getTeamNeeds(teamAbbr);
+    const lotteryEntry = lotteryTeams.find(t => t.team.includes(teamAbbr));
+    const teamNeedText = lotteryEntry?.need || '';
+
+    // Score each available prospect for this team
+    const scored = avail.slice(0, 8).map((p, idx) => {
+      let score = 0;
+      // BPA value: higher ranked = higher base score
+      score += (25 - p.rank) * 2; // rank 1 = 48 pts, rank 10 = 30 pts
+      // Board position bonus: don't fall too far from BPA
+      score -= idx * 3; // penalty for reaching
+
+      // Positional need match: +20 if fills a gap
+      const playerPositions = p.pos.split('/');
+      const fillsNeed = posNeeds.some(need => playerPositions.includes(need));
+      if (fillsNeed) score += 20;
+
+      // Lottery need keyword match (e.g., "Franchise player", "Wing help")
+      if (teamNeedText) {
+        if (teamNeedText.toLowerCase().includes('scorer') && p.stats.ppg >= 18) score += 10;
+        if (teamNeedText.toLowerCase().includes('wing') && (playerPositions.includes('SF') || playerPositions.includes('SG'))) score += 10;
+        if (teamNeedText.toLowerCase().includes('playmaker') && p.stats.apg >= 4) score += 8;
+        if (teamNeedText.toLowerCase().includes('franchise') && p.rank <= 3) score += 15;
+        if (teamNeedText.toLowerCase().includes('rim') && playerPositions.includes('C')) score += 10;
+      }
+
+      // Star power bonus for top picks
+      if (pickNum <= 3 && p.stars >= 5) score += 10;
+
+      // Small random variance for realism
+      score += (Math.random() - 0.5) * 8;
+
+      return { prospect: p, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0].prospect;
+  }
+
+  // Start the lottery reveal
+  function startLottery() {
+    const lottery = simulateLottery(lotteryTeams);
+    setLotteryOrder(lottery);
+    const teamSlot = lottery.findIndex(t => t.team === teamLotteryName);
+    setTeamPickNum(teamSlot >= 0 ? teamSlot + 1 : 7 + Math.floor(Math.random() * 8));
+    setPhase('lottery');
+    setLotteryRevealed(0);
+    // Dramatic reveal: one team at a time, bottom-up
+    let i = 14;
+    const reveal = () => {
+      if (i <= 0) return;
+      i--;
+      setLotteryRevealed(14 - i);
+      setTimeout(reveal, i <= 4 ? 1200 : 400); // Slower for top 4
+    };
+    setTimeout(reveal, 800);
+  }
+
+  // Advance one pick
+  function advancePick(avail, currentPicks, pickNum) {
+    const team = lotteryOrder[pickNum - 1];
+    if (!team) return;
+    // Extract team abbreviation from lottery name
+    const abbr = team.team.split(' ')[0];
+    const picked = aiPick(avail, abbr, pickNum);
+    if (!picked) return;
+
+    const newAvail = avail.filter(p => p.rank !== picked.rank);
+    const grade = getDraftGrade(picked, pickNum);
+    const newPick = { ...team, pick: pickNum, player: picked, grade };
+    const newPicks = [...currentPicks, newPick];
+
+    setPicks(newPicks);
+    setAvailable(newAvail);
+    setCurrentPick(pickNum + 1);
+    setExpandedPick(pickNum);
+
+    // Auto-collapse after 2s if auto-play
+    if (autoPlay) {
+      setTimeout(() => setExpandedPick(null), 1500);
+    }
+
+    return { avail: newAvail, picks: newPicks };
+  }
+
+  // Start picking phase
+  function startPicking() {
+    setPhase('picking');
+    setAvailable([...prospects]);
+    setPicks([]);
+    setCurrentPick(1);
+  }
+
+  // Handle next pick click (or auto-advance)
+  function handleNextPick() {
+    if (currentPick === teamPickNum) {
+      setPhase('userPick');
+      return;
+    }
+    advancePick(available, picks, currentPick);
+  }
+
+  // Auto-play effect
+  useEffect(() => {
+    if (!autoPlay || phase !== 'picking' || currentPick >= teamPickNum) return;
+    const timer = setTimeout(handleNextPick, 2000);
+    return () => clearTimeout(timer);
+  }, [autoPlay, currentPick, phase]);
+
+  const [showLineupBuilder, setShowLineupBuilder] = useState(false);
+  const [continuingDraft, setContinuingDraft] = useState(false);
+  const [showLotteryModal, setShowLotteryModal] = useState(false);
+
+  // User makes their pick
+  function makeUserPick(prospect) {
+    const grade = getDraftGrade(prospect, teamPickNum);
+    const pick = { team: teamLotteryName, pick: teamPickNum, player: prospect, grade };
+    setPicks(prev => [...prev, pick]);
+    setUserSelection(prospect);
+    setAvailable(prev => prev.filter(p => p.rank !== prospect.rank));
+    setCurrentPick(teamPickNum + 1);
+    setShowConfetti(true);
+    setPhase('review');
+    setTimeout(() => setShowConfetti(false), 4000);
+  }
+
+  // Continue draft after user's pick — simulate remaining picks
+  function continueDraft() {
+    setContinuingDraft(true);
+    let a = [...available];
+    let p = [...picks];
+    let pick = currentPick;
+    const runNext = () => {
+      if (pick > 14 || pick > lotteryOrder.length) { setContinuingDraft(false); return; }
+      const team = lotteryOrder[pick - 1];
+      if (!team) { setContinuingDraft(false); return; }
+      const abbr = team.team.split(' ')[0];
+      const selected = aiPick(a, abbr, pick);
+      if (!selected) { setContinuingDraft(false); return; }
+      const grade = getDraftGrade(selected, pick);
+      a = a.filter(pr => pr.rank !== selected.rank);
+      p = [...p, { ...team, pick, player: selected, grade }];
+      setPicks([...p]);
+      setAvailable([...a]);
+      setCurrentPick(pick + 1);
+      pick++;
+      setTimeout(runNext, 800);
+    };
+    setTimeout(runNext, 500);
+  }
+
+  // Prospect comparison overlay
+  function ProspectCompare({ a, b, onClose }) {
+    const cats = Object.keys(a.radar);
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={onClose}>
+        <div className="w-full max-w-2xl glass rounded-2xl p-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-black text-white">Head to Head</h3>
+            <button onClick={onClose} className="text-gray-500 hover:text-white text-xl">&times;</button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="text-center">
+              <div className="font-bold text-team-secondary">{a.name}</div>
+              <div className="text-[10px] text-gray-400">{a.pos} | {a.school}</div>
+            </div>
+            <div className="text-center text-xs text-gray-500 self-end pb-1">VS</div>
+            <div className="text-center">
+              <div className="font-bold text-white">{b.name}</div>
+              <div className="text-[10px] text-gray-400">{b.pos} | {b.school}</div>
+            </div>
+          </div>
+          {cats.map(cat => {
+            const aVal = a.radar[cat]; const bVal = b.radar[cat];
+            return (
+              <div key={cat} className="flex items-center gap-2 mb-2">
+                <div className="w-16 text-right text-xs text-gray-400">{cat}</div>
+                <div className="flex-1 flex items-center gap-1">
+                  <div className="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden flex justify-end">
+                    <div className="h-full rounded-full" style={{ width: `${aVal}%`, background: 'var(--team-secondary)' }} />
+                  </div>
+                  <span className={`text-xs font-bold w-7 text-right ${aVal > bVal ? 'text-team-secondary' : 'text-gray-500'}`}>{aVal}</span>
+                </div>
+                <div className="flex-1 flex items-center gap-1">
+                  <span className={`text-xs font-bold w-7 ${bVal > aVal ? 'text-white' : 'text-gray-500'}`}>{bVal}</span>
+                  <div className="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-white/30" style={{ width: `${bVal}%` }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/[0.06]">
+            {['ppg', 'rpg', 'apg'].map(k => (
+              <div key={k} className="text-center">
+                <div className="flex justify-around">
+                  <span className={`text-sm font-black ${a.stats[k] > b.stats[k] ? 'text-team-secondary' : 'text-gray-400'}`}>{a.stats[k]}</span>
+                  <span className={`text-sm font-black ${b.stats[k] > a.stats[k] ? 'text-white' : 'text-gray-400'}`}>{b.stats[k]}</span>
+                </div>
+                <div className="text-[9px] text-gray-500 uppercase">{k.toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Confetti */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+          {Array.from({length: 30}, (_, i) => (
+            <div key={i} className="absolute" style={{
+              left: `${Math.random() * 100}%`, top: '-20px',
+              width: 8 + Math.random() * 8, height: 8 + Math.random() * 8,
+              borderRadius: Math.random() > 0.5 ? '50%' : '0',
+              background: ['var(--team-secondary)', 'var(--team-primary)', 'var(--team-light)', '#fff', '#22c55e'][Math.floor(Math.random() * 5)],
+              animation: `confetti ${1.5 + Math.random() * 2}s ${Math.random() * 0.5}s forwards`
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Compare overlay */}
+      {compareMode && compareMode.length === 2 && (
+        <ProspectCompare a={compareMode[0]} b={compareMode[1]} onClose={() => setCompareMode(null)} />
+      )}
+
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-3xl md:text-4xl font-black text-white">2026 NBA <span className="text-team-secondary">Draft Simulator</span></h2>
+        <p className="text-gray-400 text-sm mt-2">Step through every pick. Scout prospects. Make your selection.</p>
+      </div>
+
+      {/* PHASE: SETUP */}
+      {phase === 'setup' && (
+        <div className="glass rounded-2xl p-8 text-center animate-fade-in">
+          <div className="text-6xl mb-4" style={{ filter: 'grayscale(0.3)' }}>&#127936;</div>
+          <h3 className="text-xl font-black text-white mb-2">Ready to Run the Draft?</h3>
+          <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+            The lottery will determine draft order based on real odds. Then step through each pick — scout prospects, compare players, and make the call for the {config.fullName}.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onClick={startLottery}
+              className="px-8 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all">
+              Start Lottery
+            </button>
+          </div>
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+            {lotteryTeams.slice(0, 8).map((t, i) => (
+              <div key={i} className={`glass rounded-lg p-2.5 text-center ${t.team === teamLotteryName ? 'border border-team-secondary/30' : ''}`}>
+                <div className="text-xs font-bold text-gray-300 truncate">{t.team}</div>
+                <div className="text-[10px] text-gray-500">{t.record} · {t.odds}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PHASE: LOTTERY REVEAL */}
+      {phase === 'lottery' && (
+        <div className="glass rounded-2xl p-6 animate-fade-in">
+          <h3 className="text-lg font-black text-team-secondary text-center mb-2">Lottery Results</h3>
+          <p className="text-center text-gray-500 text-xs mb-6">Revealing draft order...</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {lotteryOrder.slice(0, 14).map((t, i) => {
+              const revealed = i >= (14 - lotteryRevealed);
+              const isTeam = t.team === teamLotteryName;
+              return (
+                <div key={i} className={`rounded-xl p-3 text-center transition-all duration-500 ${
+                  revealed ? (isTeam ? 'bg-team-secondary/20 border-2 border-team-secondary shadow-lg shadow-team-secondary/20' : 'glass') : 'bg-gray-900/30 border border-white/[0.03]'
+                }`}>
+                  <div className={`text-lg font-black ${revealed ? (isTeam ? 'text-team-secondary' : 'text-white') : 'text-gray-700'}`}>#{i + 1}</div>
+                  <div className={`text-xs font-semibold truncate ${revealed ? (isTeam ? 'text-team-secondary' : 'text-gray-300') : 'text-gray-800'}`}>
+                    {revealed ? t.team : '???'}
+                  </div>
+                  {revealed && <div className="text-[10px] text-gray-500 mt-0.5">{t.need}</div>}
+                </div>
+              );
+            })}
+          </div>
+          {lotteryRevealed >= 14 && (
+            <div className="text-center mt-6 animate-fade-in">
+              <div className="text-team-secondary font-black text-xl mb-2">{config.fullName} pick at #{teamPickNum}</div>
+              {teamPickNum === 1 && !showLotteryModal && (() => { setTimeout(() => setShowLotteryModal(true), 300); return null; })()}
+              <button onClick={startPicking}
+                className="px-8 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all mt-2">
+                Start the Draft
+              </button>
+            </div>
+          )}
+
+          {/* Lottery Win Modal */}
+          {showLotteryModal && teamPickNum === 1 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)' }}>
+              <div className="w-full max-w-lg rounded-2xl relative overflow-hidden animate-fade-in" style={{
+                background: 'linear-gradient(135deg, rgba(var(--team-secondary-rgb),0.15) 0%, rgba(var(--team-primary-rgb),0.25) 40%, rgba(var(--team-midnight-rgb),0.98) 100%)',
+                border: '2px solid var(--team-secondary)',
+                boxShadow: '0 0 60px rgba(var(--team-secondary-rgb),0.3), 0 0 120px rgba(var(--team-secondary-rgb),0.1)'
+              }}>
+                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, var(--team-secondary), transparent)', animation: 'shimmer 2s infinite' }} />
+                <div className="p-8 text-center">
+                  <div className="text-6xl mb-4">&#127942;</div>
+                  <div className="text-xs text-team-secondary font-bold uppercase tracking-[0.3em] mb-2">Draft Lottery</div>
+                  <h2 className="text-3xl font-black text-white mb-1">THE #1 PICK!</h2>
+                  <p className="text-lg text-team-secondary font-bold mb-4">{config.fullName}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed mb-6 max-w-sm mx-auto">
+                    The {config.name} have won the draft lottery and will have the first overall pick in the 2026 NBA Draft. Every top prospect is on the board.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 mb-6">
+                    {prospects.slice(0, 3).map((p, i) => (
+                      <div key={i} className="glass rounded-xl p-3 text-center">
+                        <div className="text-lg font-black text-team-secondary">{p.name.split(' ').pop()}</div>
+                        <div className="text-[10px] text-gray-400">{p.pos} | {p.school}</div>
+                        <div className="text-[10px] text-gray-500 mt-1">{p.stats.ppg} PPG</div>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => { setShowLotteryModal(false); startPicking(); }}
+                    className="px-8 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all">
+                    Start the Draft
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PHASE: PICKING (step-through) */}
+      {phase === 'picking' && (
+        <div className="animate-fade-in">
+          {/* Progress bar */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-full bg-team-secondary rounded-full transition-all duration-500" style={{ width: `${(currentPick / teamPickNum) * 100}%` }} />
+            </div>
+            <span className="text-xs text-gray-400 shrink-0">Pick {currentPick} of {teamPickNum}</span>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAutoPlay(!autoPlay)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${autoPlay ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
+                {autoPlay ? 'Auto-Playing' : 'Auto-Play'}
+              </button>
+            </div>
+            {!autoPlay && currentPick < teamPickNum && (
+              <button onClick={handleNextPick}
+                className="px-5 py-2 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all">
+                Next Pick →
+              </button>
+            )}
+            {currentPick >= teamPickNum && (
+              <button onClick={() => setPhase('userPick')}
+                className="px-5 py-2 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all animate-pulse">
+                Your Turn →
+              </button>
+            )}
+          </div>
+
+          {/* Completed picks */}
+          <div className="space-y-2">
+            {picks.map((p, i) => (
+              <div key={i}>
+                <div className={`glass rounded-xl p-3 cursor-pointer transition-all hover:bg-white/[0.03] ${expandedPick === p.pick ? 'border border-team-secondary/20' : ''}`}
+                  onClick={() => setExpandedPick(expandedPick === p.pick ? null : p.pick)}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-sm font-black text-team-secondary shrink-0">
+                      {p.pick}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400 truncate">{p.team}</div>
+                      <div className="text-sm font-bold text-white">{p.player.name}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs text-gray-500">{p.player.pos} | {p.player.school}</div>
+                      <div className={`text-sm font-black ${p.grade.color}`}>{p.grade.grade}</div>
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-500 transition-transform ${expandedPick === p.pick ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {expandedPick === p.pick && (
+                  <div className="glass rounded-b-xl p-4 -mt-1 border-t border-white/[0.04] animate-fade-in">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`text-sm font-black ${p.grade.color}`}>{p.grade.grade}</span>
+                          <span className="text-xs text-gray-400">{p.grade.label}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.player.stats.ppg}</div>
+                            <div className="text-[9px] text-gray-500">PPG</div>
+                          </div>
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.player.stats.rpg}</div>
+                            <div className="text-[9px] text-gray-500">RPG</div>
+                          </div>
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.player.stats.apg}</div>
+                            <div className="text-[9px] text-gray-500">APG</div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-gray-400">
+                          <span className="text-gray-500">Strengths:</span> {p.player.strengths[0]}
+                        </div>
+                      </div>
+                      <div>
+                        <PlayerRadar data={p.player.radar} size={140} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* "On the clock" indicator */}
+          {currentPick <= lotteryOrder.length && currentPick < teamPickNum && !autoPlay && (
+            <div className="glass rounded-xl p-4 mt-3 border border-team-secondary/10 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-team-secondary/20 flex items-center justify-center text-sm font-black text-team-secondary shrink-0 animate-pulse">
+                  {currentPick}
+                </div>
+                <div>
+                  <div className="text-xs text-team-secondary font-bold uppercase tracking-wider">On the Clock</div>
+                  <div className="text-sm text-white font-bold">{lotteryOrder[currentPick - 1]?.team}</div>
+                </div>
+                <div className="ml-auto text-xs text-gray-500">{lotteryOrder[currentPick - 1]?.need}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PHASE: USER PICK */}
+      {phase === 'userPick' && (
+        <div className="animate-fade-in">
+          <div className="text-center mb-6">
+            <div className="text-team-secondary font-black text-2xl md:text-3xl mb-1">WITH THE #{teamPickNum} PICK...</div>
+            <div className="text-gray-400 text-sm">The {config.fullName} select:</div>
+          </div>
+
+          {/* Available prospects */}
+          <div className="space-y-3">
+            {available.slice(0, 5).map((p, i) => {
+              const grade = getDraftGrade(p, teamPickNum);
+              const { needs } = getTeamNeeds(config.abbr);
+              const fitScore = p.jazzFit || p.teamFit || 5;
+              return (
+                <div key={p.rank} className="glass rounded-xl overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="text-center shrink-0">
+                        <div className="text-2xl font-black text-team-secondary">#{p.rank}</div>
+                        <div className="text-[10px] text-gray-500">{p.projected}</div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-lg text-white">{p.name}</span>
+                          <span className="text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded">{p.pos} | {p.school} | {p.height}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.stats.ppg}</div>
+                            <div className="text-[9px] text-gray-500">PPG</div>
+                          </div>
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.stats.rpg}</div>
+                            <div className="text-[9px] text-gray-500">RPG</div>
+                          </div>
+                          <div className="text-center glass rounded-lg p-2">
+                            <div className="text-sm font-black text-team-secondary">{p.stats.apg}</div>
+                            <div className="text-[9px] text-gray-500">APG</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {p.strengths.map((s, si) => (
+                            <span key={si} className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">{s.split(' — ')[0].substring(0, 40)}</span>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{p.jazzFitAnalysis || p.teamFitAnalysis}</p>
+                      </div>
+                      <div className="shrink-0 flex flex-col items-center gap-2">
+                        <div className="text-center">
+                          <div className={`text-lg font-black ${grade.color}`}>{grade.grade}</div>
+                          <div className="text-[9px] text-gray-500">{grade.label}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-sm font-black ${fitScore >= 8 ? 'text-green-400' : fitScore >= 6 ? 'text-team-secondary' : 'text-yellow-400'}`}>{fitScore}/10</div>
+                          <div className="text-[9px] text-gray-500">Team Fit</div>
+                        </div>
+                        <button onClick={() => makeUserPick(p)}
+                          className="px-4 py-2 rounded-lg bg-team-secondary text-black font-bold text-xs hover:opacity-90 transition-all mt-1">
+                          Draft
+                        </button>
+                        {i < available.length - 1 && (
+                          <button onClick={() => setCompareMode([p, available[i + 1 < available.length ? i + 1 : 0]])}
+                            className="text-[10px] text-gray-500 hover:text-team-secondary transition-colors">
+                            Compare
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* PHASE: REVIEW */}
+      {phase === 'review' && userSelection && (
+        <div className="animate-fade-in">
+          {/* Draft card hero */}
+          <div className="rounded-2xl p-6 mb-6 relative overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(var(--team-secondary-rgb),0.1) 0%, rgba(var(--team-primary-rgb),0.2) 50%, rgba(var(--team-midnight-rgb),0.95) 100%)',
+            border: '2px solid var(--team-secondary)',
+            boxShadow: '0 0 30px rgba(var(--team-secondary-rgb),0.2)'
+          }}>
+            <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, var(--team-secondary), transparent)', animation: 'shimmer 3s infinite' }} />
+            <div className="text-center mb-4">
+              <div className="text-xs text-team-secondary font-bold uppercase tracking-widest mb-1">With the #{teamPickNum} Pick</div>
+              <div className="text-sm text-gray-400">The {config.fullName} select</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-black text-white mb-1">{userSelection.name}</div>
+              <div className="text-sm text-gray-400">{userSelection.pos} | {userSelection.school} | {userSelection.height}</div>
+            </div>
+            <div className="flex justify-center gap-6 mt-5">
+              <div className={`text-center px-5 py-3 rounded-xl ${getDraftGrade(userSelection, teamPickNum).color}`} style={{ background: 'rgba(var(--team-secondary-rgb),0.1)' }}>
+                <div className="text-3xl font-black">{getDraftGrade(userSelection, teamPickNum).grade}</div>
+                <div className="text-[10px] text-gray-400">{getDraftGrade(userSelection, teamPickNum).label}</div>
+              </div>
+              <div className="text-center px-5 py-3 rounded-xl" style={{ background: 'rgba(var(--team-secondary-rgb),0.1)' }}>
+                <div className="text-3xl font-black text-team-secondary">{userSelection.jazzFit || userSelection.teamFit || 7}/10</div>
+                <div className="text-[10px] text-gray-400">Team Fit</div>
+              </div>
+              <div className="text-center px-5 py-3 rounded-xl" style={{ background: 'rgba(var(--team-secondary-rgb),0.1)' }}>
+                <div className="text-3xl font-black text-white">{userSelection.stars}</div>
+                <div className="text-[10px] text-gray-400">Star Rating</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pro Comparisons */}
+          {userSelection.comps && userSelection.comps.length > 0 && (
+            <div className="glass rounded-xl p-5 mb-4">
+              <h3 className="text-sm font-black text-team-secondary mb-3">Pro Comparisons</h3>
+              <div className="flex gap-3 justify-center">
+                {userSelection.comps.map((comp, i) => (
+                  <div key={i} className="text-center glass rounded-xl px-6 py-4" style={{ background: 'rgba(var(--team-secondary-rgb),0.04)' }}>
+                    <div className="text-lg font-black text-white">{comp}</div>
+                    <div className="text-[10px] text-gray-500 mt-1">Player Comparison</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Scouting Report + Skill Profile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="glass rounded-xl p-5">
+              <h3 className="text-sm font-black text-team-secondary mb-3">{config.name} Fit Report</h3>
+              <p className="text-sm text-gray-300 leading-relaxed mb-4">{userSelection.jazzFitAnalysis || userSelection.teamFitAnalysis}</p>
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold text-green-400">STRENGTHS</h4>
+                {userSelection.strengths.map((s, i) => (
+                  <div key={i} className="flex gap-2 text-xs"><span className="text-green-400 shrink-0">+</span><span className="text-gray-300">{s}</span></div>
+                ))}
+              </div>
+              <div className="space-y-1.5 mt-3">
+                <h4 className="text-xs font-bold text-red-400">CONCERNS</h4>
+                {userSelection.concerns.map((c, i) => (
+                  <div key={i} className="flex gap-2 text-xs"><span className="text-red-400 shrink-0">-</span><span className="text-gray-300">{c}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="glass rounded-xl p-5">
+              <h3 className="text-sm font-black text-team-secondary mb-3">Skill Profile</h3>
+              <PlayerRadar data={userSelection.radar} size={200} />
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="text-center glass rounded-lg p-2">
+                  <div className="text-lg font-black text-team-secondary">{userSelection.stats.ppg}</div>
+                  <div className="text-[9px] text-gray-500">PPG</div>
+                </div>
+                <div className="text-center glass rounded-lg p-2">
+                  <div className="text-lg font-black text-team-secondary">{userSelection.stats.rpg}</div>
+                  <div className="text-[9px] text-gray-500">RPG</div>
+                </div>
+                <div className="text-center glass rounded-lg p-2">
+                  <div className="text-lg font-black text-team-secondary">{userSelection.stats.apg}</div>
+                  <div className="text-[9px] text-gray-500">APG</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Team Impact */}
+          <div className="glass rounded-xl p-5 mb-4">
+            <h3 className="text-sm font-black text-team-secondary mb-3">Team Impact</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {(() => {
+                const starters = teamData.players.filter(p => p.starter);
+                const totalPPG = starters.reduce((s, p) => s + p.stats.ppg, 0);
+                const pickPos = userSelection.pos.split('/')[0];
+                const displaced = starters.find(p => p.pos.split('/')[0] === pickPos);
+                const newPPG = totalPPG - (displaced?.stats.ppg || 0) + userSelection.stats.ppg;
+                const avgAge = 24; // estimate
+                return [
+                  { label: 'Scoring Boost', value: `+${userSelection.stats.ppg}`, sub: `${totalPPG.toFixed(0)} → ${newPPG.toFixed(0)} team PPG` },
+                  { label: 'Position', value: userSelection.pos, sub: displaced ? `Replaces ${displaced.name.split(' ').pop()}` : 'New starter' },
+                  { label: 'Ceiling', value: userSelection.ceiling?.label || userSelection.projected, sub: `${userSelection.ceiling?.pct || 50}% probability` },
+                  { label: 'Draft Value', value: getDraftGrade(userSelection, teamPickNum).grade, sub: `Rank #${userSelection.rank} at pick #${teamPickNum}` },
+                ];
+              })().map((item, i) => (
+                <div key={i} className="text-center glass rounded-lg p-3">
+                  <div className="text-lg font-black text-white">{item.value}</div>
+                  <div className="text-[10px] text-gray-500">{item.sub}</div>
+                  <div className="text-[9px] text-team-secondary font-bold uppercase mt-1">{item.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Projected Lineup with headshots */}
+          <div className="glass rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black text-team-secondary">Projected {config.name} Lineup</h3>
+              <button onClick={() => setShowLineupBuilder(!showLineupBuilder)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${showLineupBuilder ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
+                {showLineupBuilder ? 'Close Builder' : 'Lineup Builder'}
+              </button>
+            </div>
+            <div className="grid grid-cols-5 gap-3">
+              {(() => {
+                const starters = teamData.players.filter(p => p.starter);
+                const posMap = {};
+                ['PG', 'SG', 'SF', 'PF', 'C'].forEach(pos => {
+                  const starter = starters.find(p => p.pos === pos || p.pos.split('/')[0] === pos);
+                  posMap[pos] = starter || null;
+                });
+                const pickPos = userSelection.pos.split('/')[0];
+                return ['PG', 'SG', 'SF', 'PF', 'C'].map(pos => {
+                  const isNewPick = pos === pickPos;
+                  const player = isNewPick ? null : posMap[pos];
+                  const headshot = isNewPick ? null : (player?.headshot || null);
+                  return (
+                    <div key={pos} className={`rounded-xl p-3 text-center ${isNewPick ? 'bg-team-secondary/15 border border-team-secondary/30' : 'glass'}`}>
+                      <div className="text-[10px] text-gray-500 font-bold mb-2">{pos}</div>
+                      {headshot && <img src={headshot} alt="" className="w-14 h-14 rounded-full object-cover mx-auto mb-1.5" loading="lazy" />}
+                      {isNewPick && (
+                        <div className="w-14 h-14 rounded-full mx-auto mb-1.5 flex items-center justify-center" style={{ background: 'rgba(var(--team-secondary-rgb),0.2)', border: '2px dashed var(--team-secondary)' }}>
+                          <span className="text-team-secondary text-lg font-black">+</span>
+                        </div>
+                      )}
+                      <div className={`text-xs font-bold truncate ${isNewPick ? 'text-team-secondary' : 'text-gray-300'}`}>
+                        {isNewPick ? userSelection.name.split(' ').pop() : (player?.name.split(' ').pop() || '—')}
+                      </div>
+                      <div className="text-[10px] text-gray-500">{isNewPick ? userSelection.stats.ppg : (player?.stats.ppg || 0)} PPG</div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
+          {/* Lineup Builder */}
+          {showLineupBuilder && (
+            <div className="glass rounded-xl p-5 mb-4 animate-fade-in">
+              <h3 className="text-sm font-black text-team-secondary mb-3">Build Your Lineup</h3>
+              <p className="text-xs text-gray-500 mb-3">Drag {userSelection.name} into your ideal rotation with the current roster.</p>
+              <div className="grid grid-cols-5 gap-2 mb-4">
+                {['PG', 'SG', 'SF', 'PF', 'C'].map(pos => {
+                  const starters = teamData.players.filter(p => p.starter);
+                  const options = [...starters.filter(p => p.pos.includes(pos)), ...(userSelection.pos.includes(pos) ? [{ ...userSelection, name: userSelection.name + ' (DRAFT)', stats: userSelection.stats, headshot: null }] : [])];
+                  return (
+                    <div key={pos} className="text-center">
+                      <div className="text-[10px] text-gray-500 font-bold mb-1">{pos}</div>
+                      <div className="space-y-1">
+                        {options.slice(0, 3).map((p, i) => (
+                          <div key={i} className={`rounded-lg p-1.5 text-[10px] font-bold truncate ${p.name.includes('(DRAFT)') ? 'bg-team-secondary/20 text-team-secondary border border-team-secondary/30' : 'glass text-gray-300'}`}>
+                            {p.name.split(' ').pop().replace(' (DRAFT)', '')}
+                            <div className="text-[9px] text-gray-500 font-normal">{p.stats.ppg} PPG</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Continue Draft / Full Board */}
+          <div className="glass rounded-xl p-5 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black text-white">Draft Board</h3>
+              {picks.length < 14 && !continuingDraft && (
+                <button onClick={continueDraft}
+                  className="px-4 py-1.5 rounded-lg bg-team-secondary text-black font-bold text-xs hover:opacity-90 transition-all">
+                  Continue Draft →
+                </button>
+              )}
+              {continuingDraft && (
+                <span className="text-xs text-team-secondary animate-pulse font-bold">Simulating picks...</span>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              {picks.map((p, i) => (
+                <div key={i} className={`flex items-center gap-2 text-xs py-2 px-3 rounded-lg ${p.player.rank === userSelection.rank ? 'bg-team-secondary/10 border border-team-secondary/20' : 'bg-white/[0.02]'}`}>
+                  <span className="font-black text-team-secondary w-6 text-center">{p.pick}</span>
+                  <span className="text-gray-400 truncate flex-1" style={{ maxWidth: '120px' }}>{p.team}</span>
+                  <span className={`font-bold flex-1 ${p.player.rank === userSelection.rank ? 'text-team-secondary' : 'text-white'}`}>{p.player.name}</span>
+                  <span className="text-gray-500">{p.player.pos}</span>
+                  <span className={`font-black w-6 text-center ${p.grade.color}`}>{p.grade.grade}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Run Again */}
+          <div className="text-center">
+            <button onClick={() => { setPhase('setup'); setPicks([]); setUserSelection(null); setAvailable([...prospects]); setCurrentPick(1); setShowLineupBuilder(false); setContinuingDraft(false); setShowLotteryModal(false); }}
+              className="px-8 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all">
+              Run Another Simulation
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// SECTION: DRAFT SIMULATOR (quick — lottery odds-based)
 // ============================================================
 function DraftSimulator() {
   const { config, teamData } = useTeam();
@@ -8161,13 +8967,19 @@ const TRICODE_MAP = {
 const SCHEDULE_CACHE_KEY = 'nbavault_schedule_cache';
 
 async function fetchTodaysGames() {
-  // Check cache: 5 min for scheduled games, 2 min if any are live
+  // Check cache: 2 min for live games, 5 min for scheduled
+  // Bust cache if the date changed (new day = new games)
   try {
     const cached = JSON.parse(localStorage.getItem(SCHEDULE_CACHE_KEY));
     if (cached) {
-      const hasLive = cached.data.games.some(g => g.isLive);
-      const ttl = hasLive ? 2 * 60 * 1000 : 5 * 60 * 1000;
-      if (Date.now() - cached.timestamp < ttl) return cached.data;
+      const today = new Date().toISOString().split('T')[0];
+      const cacheDate = cached.data?.date || '';
+      const isStale = cacheDate && !cacheDate.includes(today.replace(/-/g, ''));
+      if (!isStale) {
+        const hasLive = cached.data.games.some(g => g.isLive);
+        const ttl = hasLive ? 2 * 60 * 1000 : 5 * 60 * 1000;
+        if (Date.now() - cached.timestamp < ttl) return cached.data;
+      }
     }
   } catch {}
 
@@ -10495,7 +11307,7 @@ function FAQPage() {
 // MAIN APP
 // ============================================================
 const TAB_SLUGS = {
-  'ROSTER': 'roster', 'DRAFT': 'draft', 'PICKS': 'picks',
+  'ROSTER': 'roster', 'DRAFT': 'draft', 'SIM': 'sim', 'PICKS': 'picks',
   'POLL': 'poll', 'TRADES': 'trades', 'LINEUPS': 'lineups', 'FAN MAP': 'fanmap',
   'WIKI': 'wiki', 'FAQ': 'faq', 'LANDING': 'nba-betting-edges'
 };
@@ -10582,7 +11394,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     return localStorage.getItem('nbavault_selected_team') || 'UTA';
   });
-  const tabs = ['ROSTER', 'DRAFT', 'PICKS', 'POLL'];
+  const tabs = ['ROSTER', 'DRAFT', 'SIM', 'PICKS', 'POLL'];
 
   const navigateTo = useCallback((tab) => {
     setActiveTab(tab);
@@ -10746,6 +11558,7 @@ function App() {
         {activeTab === 'DRAFT' && <DraftRoom />}
         {/* FanMap is embedded in the Poll page */}
         {activeTab === 'POLL' && <FanPoll />}
+        {activeTab === 'SIM' && <InteractiveDraftSim />}
         {activeTab === 'PICKS' && <DailyPicks />}
         {/* Trades + Lineups are embedded in Roster page */}
         {activeTab === 'WIKI' && <WikiPage />}
