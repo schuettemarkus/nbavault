@@ -6220,11 +6220,6 @@ function RosterSection() {
         <LineupBuilder />
       </div>
 
-      {/* Trade Machine — embedded in Roster */}
-      <div className="mt-12 pt-8 border-t border-team-primary/20">
-        <TradeMachine />
-      </div>
-
       <ScoutingPanel player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </section>
   );
@@ -7555,98 +7550,579 @@ function LineupBuilder() {
 // ============================================================
 // SECTION: TRADE MACHINE
 // ============================================================
-function TradeMachine() {
+// ============================================================
+// SECTION: TRADE CENTER (full-page interactive trade experience)
+// ============================================================
+function TradeCenter() {
   const { config, teamData } = useTeam();
   const players = teamData.players;
+  const allTeams = Object.values(TEAM_CONFIGS).filter(t => t.abbr !== config.abbr && t.players);
+
+  // States
+  const [view, setView] = useState('hub'); // hub, builder, suggestions, history, valuations
   const [teamOut, setTeamOut] = useState([]);
-  const [incoming, setIncoming] = useState('');
-  const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const [partnerTeam, setPartnerTeam] = useState(null);
+  const [partnerOut, setPartnerOut] = useState([]);
+  const [draftPicks, setDraftPicks] = useState({ sending: [], receiving: [] });
+  const [tradeHistory, setTradeHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nbavault_trade_history_' + config.abbr)) || []; } catch { return []; }
+  });
+  const [expandedTrade, setExpandedTrade] = useState(null);
 
-  const toggleTeamPlayer = (name) => {
-    setTeamOut(prev => prev.includes(name) ? prev.filter(n => n !== name) : prev.length < 2 ? [...prev, name] : prev);
+  const saveHistory = (trades) => {
+    setTradeHistory(trades);
+    try { localStorage.setItem('nbavault_trade_history_' + config.abbr, JSON.stringify(trades.slice(0, 20))); } catch {}
   };
 
-  const coreStr = players.filter(p => p.starter).map(p => `${p.name} (${p.pos})`).join(', ');
+  // Player value estimation (simplified — based on age, stats, contract)
+  function estimateValue(player) {
+    const ppg = player.stats?.ppg || 0;
+    const age = 25; // Estimate
+    let value = ppg * 3;
+    if (player.badge === 'ALL-STAR') value += 20;
+    if (player.starter) value += 10;
+    if (ppg >= 25) value += 15;
+    if (ppg >= 20) value += 8;
+    return Math.round(value);
+  }
 
-  const analyzeTrade = async () => {
-    if (!teamOut.length || !incoming.trim()) return;
-    const key = apiKey || prompt('Enter your Anthropic API key:');
-    if (!key) return;
-    if (!apiKey) setApiKey(key);
-    setLoading(true);
-    try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          system: `You are an NBA trade analyst. Evaluate trades for the ${config.fullName}. Current core: ${coreStr}. Head coach: ${config.coach}. GM: ${config.gm}. Be specific and analytical. Format: Start with a letter grade (A+ to F), then 3 bullet points for the trade, then 3 bullet points against. End with a ${config.gm} Approval rating (1-10).`,
-          messages: [{ role: 'user', content: `${config.name} trade away: ${teamOut.join(', ')}. ${config.name} receive: ${incoming}. Analyze this trade.` }]
-        })
+  // Calculate trade fairness
+  function tradeFairness(sendPlayers, recvPlayers, sendPicks, recvPicks) {
+    const sendVal = sendPlayers.reduce((s, p) => s + estimateValue(p), 0) + sendPicks.length * 20;
+    const recvVal = recvPlayers.reduce((s, p) => s + estimateValue(p), 0) + recvPicks.length * 20;
+    if (sendVal === 0 && recvVal === 0) return { pct: 50, label: 'Empty', color: 'text-gray-500' };
+    const total = sendVal + recvVal;
+    const recvPct = Math.round((recvVal / total) * 100);
+    if (recvPct >= 65) return { pct: recvPct, label: 'Highway Robbery', color: 'text-green-400' };
+    if (recvPct >= 55) return { pct: recvPct, label: 'Win', color: 'text-green-400' };
+    if (recvPct >= 45) return { pct: recvPct, label: 'Fair Trade', color: 'text-team-secondary' };
+    if (recvPct >= 35) return { pct: recvPct, label: 'Slight Overpay', color: 'text-yellow-400' };
+    return { pct: recvPct, label: 'Overpay', color: 'text-red-400' };
+  }
+
+  // Generate trade grade
+  function tradeGrade(fairness, fillsNeed) {
+    let score = fairness.pct;
+    if (fillsNeed) score += 10;
+    if (score >= 65) return { grade: 'A', color: 'text-green-400' };
+    if (score >= 58) return { grade: 'B+', color: 'text-green-400' };
+    if (score >= 52) return { grade: 'B', color: 'text-team-secondary' };
+    if (score >= 45) return { grade: 'C+', color: 'text-team-secondary' };
+    if (score >= 38) return { grade: 'C', color: 'text-yellow-400' };
+    return { grade: 'D', color: 'text-red-400' };
+  }
+
+  // Identify team needs
+  function getNeeds() {
+    const starters = players.filter(p => p.starter);
+    const needs = [];
+    const posMap = {};
+    ['PG', 'SG', 'SF', 'PF', 'C'].forEach(pos => {
+      posMap[pos] = starters.filter(p => p.pos.includes(pos));
+    });
+    const topPPG = Math.max(...starters.map(p => p.stats.ppg));
+    if (topPPG < 22) needs.push({ type: 'Scoring', desc: 'Need a go-to scorer (22+ PPG)', priority: 'high' });
+    if (!posMap.PG.length || posMap.PG.every(p => p.stats.apg < 5)) needs.push({ type: 'Playmaker', desc: 'Need a primary ball-handler', priority: 'high' });
+    if (!posMap.C.length || posMap.C.every(p => p.stats.rpg < 7)) needs.push({ type: 'Rim Protector', desc: 'Need a rebounding center', priority: 'medium' });
+    const totalThreePct = starters.filter(p => p.stats.threePct > 0).reduce((s, p) => s + p.stats.threePct, 0) / Math.max(starters.filter(p => p.stats.threePct > 0).length, 1);
+    if (totalThreePct < 35) needs.push({ type: '3PT Shooting', desc: 'Need floor spacing (35%+ 3PT)', priority: 'medium' });
+    if (needs.length === 0) needs.push({ type: 'Depth', desc: 'Roster is solid — add depth', priority: 'low' });
+    return needs;
+  }
+
+  // Generate suggested trades based on team needs
+  function generateSuggestions() {
+    const needs = getNeeds();
+    const suggestions = [];
+    const starters = players.filter(p => p.starter);
+    const benchPlayers = players.filter(p => !p.starter && p.stats.ppg >= 5);
+    const tradeable = [...benchPlayers, ...starters.filter(p => p.stats.ppg < 18)].slice(0, 5);
+
+    allTeams.forEach(otherTeam => {
+      if (!otherTeam.players) return;
+      const otherStarters = otherTeam.players.filter(p => p.starter);
+      needs.forEach(need => {
+        otherStarters.forEach(target => {
+          let match = false;
+          if (need.type === 'Scoring' && target.stats.ppg >= 22) match = true;
+          if (need.type === 'Playmaker' && target.stats.apg >= 6) match = true;
+          if (need.type === 'Rim Protector' && target.stats.rpg >= 8 && target.pos.includes('C')) match = true;
+          if (need.type === '3PT Shooting' && target.stats.threePct >= 38) match = true;
+          if (!match) return;
+
+          // Find a realistic trade package
+          const sendPlayer = tradeable.find(tp => {
+            const tpVal = estimateValue(tp);
+            const targetVal = estimateValue(target);
+            return Math.abs(tpVal - targetVal) < 30;
+          });
+          if (!sendPlayer) return;
+
+          const targetVal = estimateValue(target);
+          const sendVal = estimateValue(sendPlayer);
+          const needPick = targetVal > sendVal + 10;
+
+          suggestions.push({
+            partner: otherTeam,
+            target,
+            send: sendPlayer,
+            needPick,
+            need: need.type,
+            targetVal,
+            sendVal,
+          });
+        });
       });
-      const data = await resp.json();
-      setAnalysis(data.content?.[0]?.text || 'Could not analyze trade.');
-    } catch (e) {
-      setAnalysis('Trade analysis requires an Anthropic API key. Enter a valid key to unlock AI-powered analysis.');
+    });
+
+    return suggestions
+      .sort((a, b) => b.targetVal - a.targetVal)
+      .filter((s, i, arr) => arr.findIndex(x => x.target.name === s.target.name) === i)
+      .slice(0, 8);
+  }
+
+  const togglePlayer = (name, side) => {
+    if (side === 'send') {
+      setTeamOut(prev => prev.includes(name) ? prev.filter(n => n !== name) : prev.length < 3 ? [...prev, name] : prev);
+    } else {
+      setPartnerOut(prev => prev.includes(name) ? prev.filter(n => n !== name) : prev.length < 3 ? [...prev, name] : prev);
     }
-    setLoading(false);
   };
+
+  const togglePick = (pick, side) => {
+    setDraftPicks(prev => {
+      const key = side;
+      const existing = prev[key];
+      return { ...prev, [key]: existing.includes(pick) ? existing.filter(p => p !== pick) : [...existing, pick] };
+    });
+  };
+
+  // Execute trade and save to history
+  function executeTrade() {
+    const sendPlayers = players.filter(p => teamOut.includes(p.name));
+    const recvPlayers = partnerTeam?.players?.filter(p => partnerOut.includes(p.name)) || [];
+    const fairness = tradeFairness(sendPlayers, recvPlayers, draftPicks.sending, draftPicks.receiving);
+    const needs = getNeeds();
+    const fillsNeed = recvPlayers.some(p => {
+      return needs.some(n => {
+        if (n.type === 'Scoring' && p.stats.ppg >= 20) return true;
+        if (n.type === 'Playmaker' && p.stats.apg >= 5) return true;
+        if (n.type === 'Rim Protector' && p.stats.rpg >= 7) return true;
+        return false;
+      });
+    });
+    const grade = tradeGrade(fairness, fillsNeed);
+
+    const trade = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString(),
+      sent: sendPlayers.map(p => ({ name: p.name, pos: p.pos, ppg: p.stats.ppg, headshot: p.headshot })),
+      received: recvPlayers.map(p => ({ name: p.name, pos: p.pos, ppg: p.stats.ppg, headshot: p.headshot, team: partnerTeam.abbr })),
+      sentPicks: draftPicks.sending,
+      receivedPicks: draftPicks.receiving,
+      partner: partnerTeam?.abbr,
+      partnerName: partnerTeam?.fullName,
+      fairness,
+      grade,
+      fillsNeed,
+    };
+
+    saveHistory([trade, ...tradeHistory]);
+    setExpandedTrade(trade.id);
+    setView('history');
+    // Reset builder
+    setTeamOut([]);
+    setPartnerOut([]);
+    setDraftPicks({ sending: [], receiving: [] });
+  }
+
+  const needs = getNeeds();
 
   return (
-    <section className="py-12 px-4 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-black text-center mb-2">
-        <span className="text-team-secondary">TRADE</span> MACHINE
-      </h2>
-      <p className="text-center text-gray-400 mb-6">What if? Simulate trades with AI analysis</p>
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-3xl md:text-4xl font-black text-white">{config.name} <span className="text-team-secondary">Trade Center</span></h2>
+        <p className="text-gray-400 text-sm mt-2">Build trades, explore suggestions, and track your moves</p>
+      </div>
 
-      <div className="glass rounded-2xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Team sends */}
-          <div>
-            <h3 className="text-sm font-bold text-red-400 mb-3">{config.name.toUpperCase()} SEND (select 1-2)</h3>
-            <div className="space-y-2">
-              {players.map(p => (
-                <button key={p.name} onClick={() => toggleTeamPlayer(p.name)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${teamOut.includes(p.name) ? 'bg-red-600/20 border border-red-500/50 text-red-300' : 'glass text-gray-300 hover:text-white'}`}>
-                  #{p.number} {p.name} <span className="text-gray-500">({p.pos})</span>
-                </button>
+      {/* Navigation */}
+      <div className="flex justify-center gap-2 mb-8">
+        {[
+          { key: 'hub', label: 'Overview' },
+          { key: 'builder', label: 'Trade Builder' },
+          { key: 'suggestions', label: 'Trade Ideas' },
+          { key: 'valuations', label: 'Player Values' },
+          { key: 'history', label: `History (${tradeHistory.length})` },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setView(tab.key)}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${view === tab.key ? 'bg-team-secondary text-black' : 'glass text-gray-400 hover:text-white'}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* FEATURE 1: TRADE HUB — Overview with needs + assets */}
+      {view === 'hub' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Team needs */}
+          <div className="glass rounded-2xl p-6">
+            <h3 className="text-lg font-black text-white mb-4">{config.name} <span className="text-team-secondary">Needs Assessment</span></h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {needs.map((n, i) => (
+                <div key={i} className={`rounded-xl p-4 border ${n.priority === 'high' ? 'border-red-500/20 bg-red-500/5' : n.priority === 'medium' ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-black uppercase tracking-wider ${n.priority === 'high' ? 'text-red-400' : n.priority === 'medium' ? 'text-yellow-400' : 'text-gray-500'}`}>{n.priority}</span>
+                    <span className="text-sm font-bold text-white">{n.type}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{n.desc}</p>
+                </div>
               ))}
             </div>
           </div>
-          {/* Team receives */}
-          <div>
-            <h3 className="text-sm font-bold text-green-400 mb-3">{config.name.toUpperCase()} RECEIVE</h3>
-            <textarea value={incoming} onChange={e => setIncoming(e.target.value)}
-              placeholder="Type player names (e.g., 'Zach LaVine, 2027 1st round pick')"
-              className="w-full h-32 bg-gray-900/50 border border-team-primary rounded-xl p-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-team-secondary" />
-            <button onClick={analyzeTrade} disabled={loading || !teamOut.length || !incoming.trim()}
-              className="mt-3 w-full py-3 rounded-xl font-bold text-sm transition-all bg-team-secondary text-black hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed">
-              {loading ? 'Analyzing...' : '🔄 Analyze Trade'}
+
+          {/* Tradeable assets */}
+          <div className="glass rounded-2xl p-6">
+            <h3 className="text-lg font-black text-white mb-4">Trade <span className="text-team-secondary">Assets</span></h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {players.filter(p => p.starter).map(p => (
+                <div key={p.name} className="glass rounded-xl p-3 text-center">
+                  {p.headshot && <img src={p.headshot} alt="" className="w-12 h-12 rounded-full object-cover mx-auto mb-2" loading="lazy" />}
+                  <div className="text-xs font-bold text-white truncate">{p.name}</div>
+                  <div className="text-[10px] text-gray-500">{p.pos} · {p.stats.ppg} PPG</div>
+                  <div className="mt-1.5">
+                    <span className="text-xs font-black text-team-secondary">{estimateValue(p)}</span>
+                    <span className="text-[9px] text-gray-500 ml-0.5">value</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setView('builder')} className="px-6 py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all">
+              Build a Trade
+            </button>
+            <button onClick={() => setView('suggestions')} className="px-6 py-3 rounded-xl glass text-white font-bold text-sm hover:bg-white/[0.06] transition-all">
+              See Trade Ideas
             </button>
           </div>
         </div>
+      )}
 
-        {analysis && (
-          <div className="mt-6 glass rounded-xl p-4 animate-fade-in">
-            <h3 className="text-sm font-bold text-team-secondary mb-3">AI TRADE ANALYSIS</h3>
-            <div className="text-sm text-gray-300 leading-relaxed space-y-2"
-              dangerouslySetInnerHTML={{ __html: (() => {
-                // Sanitize: escape HTML entities first, then apply safe formatting
-                const escaped = analysis
-                  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                  .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-                return escaped
-                  .replace(/\*\*(.*?)\*\*/g, '<strong class="text-team-secondary font-semibold">$1</strong>')
-                  .replace(/\n\n/g, '</p><p class="mt-2">')
-                  .replace(/\n- /g, '<br/>\u2022 ')
-                  .replace(/\n/g, '<br/>');
-              })() }} />
+      {/* FEATURE 2: TRADE BUILDER — Full interactive builder */}
+      {view === 'builder' && (
+        <div className="animate-fade-in">
+          {/* Team selector */}
+          {!partnerTeam ? (
+            <div className="glass rounded-2xl p-6 mb-6">
+              <h3 className="text-sm font-black text-team-secondary mb-4">Select Trade Partner</h3>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                {allTeams.sort((a, b) => a.fullName.localeCompare(b.fullName)).map(t => (
+                  <button key={t.abbr} onClick={() => setPartnerTeam(t)}
+                    className="glass rounded-lg p-2 text-center hover:bg-white/[0.06] transition-all">
+                    <div className="text-xs font-bold text-white">{t.abbr}</div>
+                    <div className="text-[10px] text-gray-500 truncate">{t.city}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Trade builder header */}
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={() => { setPartnerTeam(null); setPartnerOut([]); setTeamOut([]); setDraftPicks({ sending: [], receiving: [] }); }}
+                  className="text-xs text-gray-500 hover:text-white transition-colors">← Change Partner</button>
+                <div className="text-sm font-bold text-white">{config.name} <span className="text-gray-500">×</span> {partnerTeam.name}</div>
+              </div>
+
+              {/* Fairness meter */}
+              {(teamOut.length > 0 || partnerOut.length > 0) && (() => {
+                const sendPlayers = players.filter(p => teamOut.includes(p.name));
+                const recvPlayers = partnerTeam.players?.filter(p => partnerOut.includes(p.name)) || [];
+                const fairness = tradeFairness(sendPlayers, recvPlayers, draftPicks.sending, draftPicks.receiving);
+                return (
+                  <div className="glass rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-400">Trade Fairness</span>
+                      <span className={`text-sm font-black ${fairness.color}`}>{fairness.label}</span>
+                    </div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{
+                        width: `${fairness.pct}%`,
+                        background: fairness.pct >= 55 ? '#22c55e' : fairness.pct >= 45 ? 'var(--team-secondary)' : fairness.pct >= 35 ? '#eab308' : '#ef4444'
+                      }} />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                      <span>Overpay</span><span>Fair</span><span>Steal</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Your team sends */}
+                <div className="glass rounded-xl p-4">
+                  <h3 className="text-sm font-bold text-red-400 mb-3">{config.abbr} Sends</h3>
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {players.map(p => (
+                      <button key={p.name} onClick={() => togglePlayer(p.name, 'send')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all ${teamOut.includes(p.name) ? 'bg-red-500/15 border border-red-500/30 text-red-300' : 'bg-white/[0.02] text-gray-300 hover:bg-white/[0.04]'}`}>
+                        {p.headshot && <img src={p.headshot} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" loading="lazy" />}
+                        <span className="font-bold flex-1 text-left truncate">{p.name}</span>
+                        <span className="text-gray-500">{p.pos}</span>
+                        <span className="text-gray-500">{p.stats.ppg}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/* Draft picks to send */}
+                  <div className="mt-3 pt-2 border-t border-white/[0.04]">
+                    <div className="text-[10px] text-gray-500 mb-1.5">Include draft picks:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {['2027 1st', '2028 1st', '2029 1st', '2027 2nd'].map(pick => (
+                        <button key={pick} onClick={() => togglePick(pick, 'sending')}
+                          className={`text-[10px] px-2 py-1 rounded transition-all ${draftPicks.sending.includes(pick) ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-white/[0.03] text-gray-500 hover:text-white'}`}>
+                          {pick}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Partner sends */}
+                <div className="glass rounded-xl p-4">
+                  <h3 className="text-sm font-bold text-green-400 mb-3">{partnerTeam.abbr} Sends</h3>
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {(partnerTeam.players || []).map(p => (
+                      <button key={p.name} onClick={() => togglePlayer(p.name, 'receive')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all ${partnerOut.includes(p.name) ? 'bg-green-500/15 border border-green-500/30 text-green-300' : 'bg-white/[0.02] text-gray-300 hover:bg-white/[0.04]'}`}>
+                        {p.headshot && <img src={p.headshot} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" loading="lazy" />}
+                        <span className="font-bold flex-1 text-left truncate">{p.name}</span>
+                        <span className="text-gray-500">{p.pos}</span>
+                        <span className="text-gray-500">{p.stats.ppg}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/* Draft picks to receive */}
+                  <div className="mt-3 pt-2 border-t border-white/[0.04]">
+                    <div className="text-[10px] text-gray-500 mb-1.5">Include draft picks:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {['2027 1st', '2028 1st', '2029 1st', '2027 2nd'].map(pick => (
+                        <button key={pick} onClick={() => togglePick(pick, 'receiving')}
+                          className={`text-[10px] px-2 py-1 rounded transition-all ${draftPicks.receiving.includes(pick) ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-white/[0.03] text-gray-500 hover:text-white'}`}>
+                          {pick}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Execute */}
+              <button onClick={executeTrade}
+                disabled={teamOut.length === 0 && partnerOut.length === 0}
+                className="w-full py-3 rounded-xl bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                Execute Trade
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FEATURE 3: AI TRADE SUGGESTIONS — based on team needs */}
+      {view === 'suggestions' && (
+        <div className="animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-black text-white">Trade <span className="text-team-secondary">Ideas</span></h3>
+            <p className="text-xs text-gray-400 mt-1">Realistic trade scenarios based on {config.name} needs</p>
           </div>
-        )}
-      </div>
-    </section>
+          <div className="space-y-3">
+            {generateSuggestions().map((s, i) => {
+              const fairness = tradeFairness([s.send], [s.target], s.needPick ? ['2027 1st'] : [], []);
+              const grade = tradeGrade(fairness, true);
+              return (
+                <div key={i} className="glass rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${s.need === 'Scoring' ? 'bg-red-500/15 text-red-400' : s.need === 'Playmaker' ? 'bg-blue-500/15 text-blue-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
+                      {s.need}
+                    </span>
+                    <span className={`text-sm font-black ${grade.color}`}>{grade.grade}</span>
+                    <span className="text-xs text-gray-500 ml-auto">{s.partner.abbr}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-[10px] text-red-400 font-bold mb-1">{config.abbr} SENDS</div>
+                      <div className="flex items-center gap-2">
+                        {s.send.headshot && <img src={s.send.headshot} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" />}
+                        <div>
+                          <div className="text-xs font-bold text-white">{s.send.name}</div>
+                          <div className="text-[10px] text-gray-500">{s.send.pos} · {s.send.stats.ppg} PPG</div>
+                        </div>
+                      </div>
+                      {s.needPick && <div className="text-[10px] text-gray-500 mt-1">+ 2027 1st Round Pick</div>}
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-green-400 font-bold mb-1">{config.abbr} RECEIVES</div>
+                      <div className="flex items-center gap-2">
+                        {s.target.headshot && <img src={s.target.headshot} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" />}
+                        <div>
+                          <div className="text-xs font-bold text-white">{s.target.name}</div>
+                          <div className="text-[10px] text-gray-500">{s.target.pos} · {s.target.stats.ppg} PPG</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => {
+                    setPartnerTeam(s.partner);
+                    setTeamOut([s.send.name]);
+                    setPartnerOut([s.target.name]);
+                    setDraftPicks({ sending: s.needPick ? ['2027 1st'] : [], receiving: [] });
+                    setView('builder');
+                  }} className="mt-3 w-full py-2 rounded-lg text-xs font-bold bg-white/[0.04] text-gray-300 hover:bg-white/[0.08] hover:text-white transition-all">
+                    Open in Trade Builder
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* FEATURE 4: PLAYER VALUATIONS — sortable value rankings */}
+      {view === 'valuations' && (
+        <div className="animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-black text-white">Player <span className="text-team-secondary">Valuations</span></h3>
+            <p className="text-xs text-gray-400 mt-1">Estimated trade value for every player on the roster</p>
+          </div>
+          <div className="glass rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-white/[0.06] text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+              <div className="col-span-4">Player</div>
+              <div className="col-span-1 text-center">POS</div>
+              <div className="col-span-1 text-center">PPG</div>
+              <div className="col-span-1 text-center">RPG</div>
+              <div className="col-span-1 text-center">APG</div>
+              <div className="col-span-2 text-center">Role</div>
+              <div className="col-span-2 text-center">Value</div>
+            </div>
+            {[...players].sort((a, b) => estimateValue(b) - estimateValue(a)).map(p => (
+              <div key={p.name} className="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-white/[0.03] items-center hover:bg-white/[0.02]">
+                <div className="col-span-4 flex items-center gap-2">
+                  {p.headshot && <img src={p.headshot} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" loading="lazy" />}
+                  <span className="text-xs font-bold text-white truncate">{p.name}</span>
+                </div>
+                <div className="col-span-1 text-center text-xs text-gray-400">{p.pos}</div>
+                <div className="col-span-1 text-center text-xs text-white font-bold">{p.stats.ppg}</div>
+                <div className="col-span-1 text-center text-xs text-gray-300">{p.stats.rpg}</div>
+                <div className="col-span-1 text-center text-xs text-gray-300">{p.stats.apg}</div>
+                <div className="col-span-2 text-center">
+                  <span className={`text-[10px] px-2 py-0.5 rounded ${p.starter ? 'bg-team-secondary/15 text-team-secondary' : 'bg-white/[0.04] text-gray-500'}`}>
+                    {p.starter ? 'Starter' : 'Bench'}
+                  </span>
+                </div>
+                <div className="col-span-2 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-team-secondary rounded-full" style={{ width: `${Math.min(estimateValue(p), 100)}%` }} />
+                    </div>
+                    <span className="text-xs font-black text-team-secondary">{estimateValue(p)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FEATURE 5: TRADE HISTORY — saved trades with grades */}
+      {view === 'history' && (
+        <div className="animate-fade-in">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-black text-white">Trade <span className="text-team-secondary">History</span></h3>
+            <p className="text-xs text-gray-400 mt-1">Your simulated trades this session</p>
+          </div>
+          {tradeHistory.length === 0 ? (
+            <div className="glass rounded-2xl p-8 text-center">
+              <p className="text-gray-500 text-sm mb-4">No trades yet. Build your first trade!</p>
+              <button onClick={() => setView('builder')} className="px-6 py-2.5 rounded-xl bg-team-secondary text-black font-bold text-sm">
+                Open Trade Builder
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tradeHistory.map(t => (
+                <div key={t.id}>
+                  <div className={`glass rounded-xl p-4 cursor-pointer transition-all hover:bg-white/[0.03] ${expandedTrade === t.id ? 'border border-team-secondary/20' : ''}`}
+                    onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xl font-black ${t.grade.color}`}>{t.grade.grade}</span>
+                      <div className="flex-1">
+                        <div className="text-xs font-bold text-white">{config.abbr} ↔ {t.partner}</div>
+                        <div className="text-[10px] text-gray-500">{t.date} · {t.fairness.label}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="flex -space-x-2">
+                          {t.received.slice(0, 2).map((p, i) => (
+                            p.headshot ? <img key={i} src={p.headshot} alt="" className="w-6 h-6 rounded-full object-cover border border-gray-800" loading="lazy" /> : null
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-green-400 ml-1">+{t.received.map(p => p.ppg).reduce((a, b) => a + b, 0).toFixed(1)} PPG</span>
+                      </div>
+                    </div>
+                  </div>
+                  {expandedTrade === t.id && (
+                    <div className="glass rounded-b-xl p-4 -mt-1 border-t border-white/[0.04] animate-fade-in">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-[10px] text-red-400 font-bold mb-2">SENT</div>
+                          {t.sent.map((p, i) => (
+                            <div key={i} className="flex items-center gap-2 mb-1.5">
+                              {p.headshot && <img src={p.headshot} alt="" className="w-7 h-7 rounded-full object-cover" loading="lazy" />}
+                              <div>
+                                <div className="text-xs font-bold text-white">{p.name}</div>
+                                <div className="text-[10px] text-gray-500">{p.pos} · {p.ppg} PPG</div>
+                              </div>
+                            </div>
+                          ))}
+                          {t.sentPicks.map((pick, i) => (
+                            <div key={i} className="text-[10px] text-gray-400 mt-1">+ {pick}</div>
+                          ))}
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-green-400 font-bold mb-2">RECEIVED</div>
+                          {t.received.map((p, i) => (
+                            <div key={i} className="flex items-center gap-2 mb-1.5">
+                              {p.headshot && <img src={p.headshot} alt="" className="w-7 h-7 rounded-full object-cover" loading="lazy" />}
+                              <div>
+                                <div className="text-xs font-bold text-white">{p.name}</div>
+                                <div className="text-[10px] text-gray-500">{p.pos} · {p.ppg} PPG · from {p.team}</div>
+                              </div>
+                            </div>
+                          ))}
+                          {t.receivedPicks.map((pick, i) => (
+                            <div key={i} className="text-[10px] text-gray-400 mt-1">+ {pick}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.04]">
+                        <span className={`text-xs font-bold ${t.fairness.color}`}>{t.fairness.label} ({t.fairness.pct}%)</span>
+                        {t.fillsNeed && <span className="text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded">Fills a need</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {tradeHistory.length > 0 && (
+                <button onClick={() => { saveHistory([]); }} className="text-xs text-gray-600 hover:text-red-400 transition-colors mt-2">
+                  Clear History
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -11376,7 +11852,7 @@ function FAQPage() {
 // MAIN APP
 // ============================================================
 const TAB_SLUGS = {
-  'ROSTER': 'roster', 'DRAFT': 'draft', 'SIM': 'sim', 'PICKS': 'picks',
+  'ROSTER': 'roster', 'DRAFT': 'draft', 'SIM': 'sim', 'TRADE': 'trade', 'PICKS': 'picks',
   'POLL': 'poll', 'TRADES': 'trades', 'LINEUPS': 'lineups', 'FAN MAP': 'fanmap',
   'WIKI': 'wiki', 'FAQ': 'faq', 'LANDING': 'nba-betting-edges'
 };
@@ -11463,7 +11939,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     return localStorage.getItem('nbavault_selected_team') || 'UTA';
   });
-  const tabs = ['ROSTER', 'DRAFT', 'SIM', 'PICKS', 'POLL'];
+  const tabs = ['ROSTER', 'DRAFT', 'SIM', 'TRADE', 'PICKS', 'POLL'];
 
   const navigateTo = useCallback((tab) => {
     setActiveTab(tab);
@@ -11628,6 +12104,7 @@ function App() {
         {/* FanMap is embedded in the Poll page */}
         {activeTab === 'POLL' && <FanPoll />}
         {activeTab === 'SIM' && <InteractiveDraftSim />}
+        {activeTab === 'TRADE' && <TradeCenter />}
         {activeTab === 'PICKS' && <DailyPicks />}
         {/* Trades + Lineups are embedded in Roster page */}
         {activeTab === 'WIKI' && <WikiPage />}

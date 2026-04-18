@@ -213,7 +213,7 @@ describe('Jazz Data Integrity', () => {
 describe('React Components', () => {
   const REQUIRED_COMPONENTS = [
     'RosterSection', 'DraftRoom', 'DraftSimulator', 'FanMap',
-    'FanPoll', 'TradeMachine', 'LineupBuilder', 'AIChatScout',
+    'FanPoll', 'TradeCenter', 'LineupBuilder', 'AIChatScout',
     'WikiPage', 'FAQPage', 'HeroBg', 'App'
   ];
 
