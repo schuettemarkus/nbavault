@@ -11024,7 +11024,7 @@ function DailyPicks() {
         );
       })()}
 
-      {/* Tonight's Games + Edge Factors — side by side above picks */}
+      {/* Matchups + Edge Factors */}
       {allPicks.length >= 2 && (() => {
         const gameMap = {};
         allPicks.forEach(p => {
@@ -11034,16 +11034,22 @@ function DailyPicks() {
           if (p.isHome) gameMap[key].home = p.teamAbbr; else gameMap[key].away = p.teamAbbr;
           if (p.gameTime && !gameMap[key].gameTime) gameMap[key].gameTime = p.gameTime;
         });
-        const games = Object.values(gameMap).sort((a, b) => b.picks.length - a.picks.length);
+        // Sort by game time (earliest first), then by number of picks
+        const games = Object.values(gameMap).sort((a, b) => {
+          const timeA = a.gameTime ? new Date(a.gameTime).getTime() : Infinity;
+          const timeB = b.gameTime ? new Date(b.gameTime).getTime() : Infinity;
+          if (timeA !== timeB) return timeA - timeB;
+          return b.picks.length - a.picks.length;
+        });
         if (games.length === 0) return null;
 
         const injuryPicks = allPicks.filter(p => p.injury);
 
         return (
           <div className="mb-6 space-y-5">
-            {/* Tonight's Games — horizontal grid */}
+            {/* Matchups */}
             <div>
-              <h3 className="text-lg font-black text-white mb-3">Tonight's Games</h3>
+              <h3 className="text-lg font-black text-white mb-3">Today's <span className="text-team-secondary">Matchups</span></h3>
               <div className={`grid gap-3 ${games.length <= 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
                 {games.map((g, gi) => {
                   const away = g.away || g.picks[0]?.opponent;
@@ -11415,7 +11421,7 @@ function DailyPicks() {
       </div>
 
 
-      {/* Edge Factors section removed — now inline with Tonight's Games above */}
+      {/* Edge Factors section removed — now inline with Matchups above */}
 
       </div>{/* end paywall blur zone */}
 
