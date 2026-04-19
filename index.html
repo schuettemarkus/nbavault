@@ -7738,24 +7738,30 @@ function TradeCenter() {
       const otherStarters = otherTeam.players.filter(p => p.starter);
       needs.forEach(need => {
         otherStarters.forEach(target => {
+          const nt = need.type.toLowerCase();
           let match = false;
-          if (need.type === 'Scoring' && target.stats.ppg >= 22) match = true;
-          if (need.type === 'Playmaker' && target.stats.apg >= 6) match = true;
-          if (need.type === 'Rim Protector' && target.stats.rpg >= 8 && target.pos.includes('C')) match = true;
-          if (need.type === '3PT Shooting' && target.stats.threePct >= 38) match = true;
+          if (nt.includes('scor') && target.stats.ppg >= 18) match = true;
+          if (nt.includes('playmak') && (target.stats.apg || 0) >= 5) match = true;
+          if ((nt.includes('rim') || nt.includes('rebound')) && (target.stats.rpg || 0) >= 8 && (target.pos.includes('C') || target.pos.includes('PF'))) match = true;
+          if ((nt.includes('3pt') || nt.includes('spac') || nt.includes('shoot')) && (target.stats.threePct || 0) >= 37) match = true;
+          if (nt.includes('wing') && (target.pos.includes('SF') || target.pos.includes('SG')) && target.stats.ppg >= 12) match = true;
+          if (nt.includes('defen') && target.radar && target.radar.Defense >= 80) match = true;
+          if (nt.includes('bench') && target.stats.ppg >= 12 && target.stats.ppg < 20) match = true;
           if (!match) return;
 
           // Find a realistic trade package
-          const sendPlayer = tradeable.find(tp => {
+          let sendPlayer = null;
+          for (const tp of tradeable) {
             const tpVal = estimateValue(tp);
-            const targetVal = estimateValue(target);
-            return Math.abs(tpVal - targetVal) < 30;
-          });
+            const tgtVal = estimateValue(target);
+            if (Math.abs(tpVal - tgtVal) < 35) { sendPlayer = tp; break; }
+          }
+          if (!sendPlayer && tradeable.length > 0) sendPlayer = tradeable[0];
           if (!sendPlayer) return;
 
           const targetVal = estimateValue(target);
           const sendVal = estimateValue(sendPlayer);
-          const needPick = targetVal > sendVal + 10;
+          const needPick = targetVal > sendVal + 8;
 
           suggestions.push({
             partner: otherTeam,
