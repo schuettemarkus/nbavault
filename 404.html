@@ -10283,29 +10283,40 @@ function selectBestBet(picks) {
   const scored = picks.map(p => {
     let score = 0;
 
-    // Layer 1: Edge magnitude (bigger gap = safer bet)
-    score += Math.min(p.edge * 8, 30);
+    // Layer 1: Edge magnitude — use percentage for cross-stat fairness
+    const edgePct = p.line > 0 ? (p.edge / p.line) * 100 : 0;
+    score += Math.min(edgePct * 2.5, 30);
 
-    // Layer 2: Recent form — how often they've exceeded this stat level
+    // Layer 2: Hit rate — season avg vs line
     score += (p.hitRate || 0) * 6;
 
     // Layer 3: Matchup quality — bottom-10 defenses are reliable targets
-    if (p.matchupRank >= 22) score += 20; // Very bad defense
-    else if (p.matchupRank >= 15) score += 10; // Below average
+    if (p.matchupRank >= 22) score += 20;
+    else if (p.matchupRank >= 15) score += 10;
 
     // Layer 4: Minutes floor — consistent minutes = consistent output
     if (p.minutesConsistency === 'high') score += 10;
+    else if (p.minutesConsistency === 'medium') score += 5;
 
-    // Layer 5: Injury boost — proven usage spike when teammate is out
+    // Layer 5: Injury boost — proven usage spike
     if (p.hadInjuryBoost) score += 15;
 
-    // Layer 6: Stat type reliability (PTS most reliable, AST most volatile)
-    if (p.statType === 'PTS') score += 8;
+    // Layer 6: Stat type — AST overs hit at higher rate than PTS in real data
+    // Sportsbooks set AST lines more conservatively → more value
+    if (p.statType === 'AST') score += 8;
+    else if (p.statType === 'PTS') score += 5;
     else if (p.statType === 'REB') score += 4;
 
-    // Layer 7: Historical engine accuracy for this confidence tier
-    // (pulls from calibration data)
+    // Layer 7: Live line bonus — real sportsbook data = much more reliable
+    if (p.lineSource === 'live') score += 12;
+
+    // Layer 8: Blowout risk — high PTS lines risk garbage time sittings
+    if (p.statType === 'PTS' && p.line >= 28) score -= 10;
+    else if (p.statType === 'PTS' && p.line >= 25) score -= 5;
+
+    // Layer 9: Confidence tier
     if (p.confidence >= 70) score += 10;
+    else if (p.confidence >= 60) score += 5;
 
     return { ...p, bestBetScore: score };
   });
