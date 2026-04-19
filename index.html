@@ -10087,19 +10087,35 @@ async function fetchOddsApiLines() {
 function autoResolvePicks(engine, liveStats, games) {
   const finalGames = games.filter(g => g.isFinal);
   if (finalGames.length === 0 || Object.keys(liveStats).length === 0) return null;
+  const teamsPlayed = new Set();
+  finalGames.forEach(g => { teamsPlayed.add(g.home); teamsPlayed.add(g.away); });
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 
   let changed = false;
-  const updated = { ...engine, history: (engine.history || []).map(h => {
-    if (h.result) return h; // Already resolved
+  const history = (engine.history || []).map(h => {
+    if (h.result) return h;
+    // Only resolve picks from today
+    if (h.date !== todayKey) return h;
     const stats = liveStats[h.player];
     if (!stats) return h;
     const actual = stats[h.statType] || 0;
-    // Only resolve if the player's game is final (check if they have significant minutes)
-    if (stats.MIN < 5) return h; // Didn't really play
+    if (stats.MIN < 5) return h;
     const result = actual >= h.line ? 'hit' : 'miss';
     changed = true;
     return { ...h, result, actual };
-  })};
+  });
+
+  // Remove orphaned pending picks older than 2 days (phantom games)
+  const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  const cutoffKey = `${cutoff.getFullYear()}-${cutoff.getMonth()+1}-${cutoff.getDate()}`;
+  const cleaned = history.filter(h => {
+    if (h.result) return true;
+    if (h.date && h.date < cutoffKey) { changed = true; return false; }
+    return true;
+  });
+
+  const updated = { ...engine, history: cleaned };
 
   if (!changed) return null;
 
@@ -10394,6 +10410,10 @@ function calcConfidence(pick) {
   if ((pick.divergence || 0) > 0.30) score -= 5;  // >30% divergence (stacked adjustments)
   // [Improvement 3] Missing mpg data = unknown minutes = less reliable
   if (!pick.hasMpg) score -= 4;
+  // Blowout risk: very high lines (28+ PTS) are vulnerable to garbage time sittings
+  // SGA at O31 PTS scored 15 in a blowout loss — star players sit in 4th quarter
+  if (pick.statType === 'PTS' && pick.line >= 28) score -= 4;
+  if (pick.statType === 'PTS' && pick.line >= 25) score -= 2;
   // Clamp to realistic range
   return Math.max(25, Math.min(Math.round(score), 92));
 }
@@ -10681,8 +10701,8 @@ function DailyPicks() {
     // Save today's picks to history (if not already there)
     const existingIds = new Set(engine.history.map(h => h.id));
     const newHistory = picks.filter(p => !existingIds.has(p.id)).map(p => ({
-      id: p.id, date: dateKey, player: p.player, statType: p.statType,
-      line: p.line, projection: p.projection, edge: p.edge,
+      id: p.id, date: dateKey, player: p.player, teamAbbr: p.teamAbbr,
+      statType: p.statType, line: p.line, projection: p.projection, edge: p.edge,
       confidence: p.confidence, hadInjuryBoost: p.hadInjuryBoost,
       isHome: p.isHome, matchupRank: p.matchupRank, hitRate: p.hitRate,
       lineSource: p.lineSource, result: null,
