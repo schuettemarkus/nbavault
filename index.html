@@ -10106,12 +10106,12 @@ function autoResolvePicks(engine, liveStats, games) {
     return { ...h, result, actual };
   });
 
-  // Remove orphaned pending picks older than 2 days (phantom games)
-  const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-  const cutoffKey = `${cutoff.getFullYear()}-${cutoff.getMonth()+1}-${cutoff.getDate()}`;
+  // Remove orphaned pending picks not from today (phantom games that never happened)
   const cleaned = history.filter(h => {
-    if (h.result) return true;
-    if (h.date && h.date < cutoffKey) { changed = true; return false; }
+    if (h.result) return true; // Keep all resolved picks
+    if (!h.date) return true;
+    // Parse the pick date and compare to today
+    if (h.date !== todayKey) { changed = true; return false; } // Remove non-today pending picks
     return true;
   });
 
@@ -10572,9 +10572,16 @@ function DailyPicks() {
     }
   }, [liveStats, schedule]);
 
-  // Calibrate on mount
+  // Calibrate on mount + clean orphaned pending picks
   useEffect(() => {
-    const updated = { ...engine, weights: calibrateWeights(engine), lastCalibrated: new Date().toISOString() };
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+    const cleanedHistory = (engine.history || []).filter(h => {
+      if (h.result) return true; // Keep resolved
+      if (h.date && h.date !== todayKey) return false; // Remove old pending
+      return true;
+    });
+    const updated = { ...engine, history: cleanedHistory, weights: calibrateWeights({ ...engine, history: cleanedHistory }), lastCalibrated: new Date().toISOString() };
     setEngine(updated);
     saveVaultEngine(updated);
   }, []);
