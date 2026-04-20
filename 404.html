@@ -10096,6 +10096,9 @@ function autoResolvePicks(engine, liveStats, games) {
   const history = (engine.history || []).map(h => {
     if (h.result) return h;
     if (h.date !== todayKey) return h;
+    // CRITICAL: only resolve if THIS PLAYER'S TEAM is in a FINAL game
+    // Prevents resolving halftime stats as final (Fox at 2 PTS at halftime)
+    if (h.teamAbbr && !teamsPlayed.has(h.teamAbbr)) return h;
     const stats = liveStats[h.player];
     if (!stats) return h;
     const actual = stats[h.statType] || 0;
@@ -11269,26 +11272,33 @@ function DailyPicks() {
                           </div>
                           {gamePick && (
                             <div className="rounded-lg p-3 border border-team-secondary/20" style={{ background: 'rgba(var(--team-secondary-rgb),0.05)' }}>
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <svg className="w-3.5 h-3.5 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                <span className="text-[10px] font-black text-team-secondary uppercase tracking-wider">Pick of the Game</span>
-                              </div>
                               {(() => {
                                 const live = getLiveStatus(gamePick, liveStats);
+                                const resolved = engine.history.find(h => h.player === gamePick.player && h.statType === gamePick.statType && h.result);
+                                const isFinal = gamePick.locked && !live;
                                 return (
                               <div>
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <svg className="w-3.5 h-3.5 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                  <span className="text-[10px] font-black text-team-secondary uppercase tracking-wider">Pick of the Game</span>
+                                  {resolved && (
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black ml-auto ${resolved.result === 'hit' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                                      {resolved.result === 'hit' ? 'HIT' : 'MISS'} {resolved.actual != null ? resolved.actual : ''}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-3">
                                   {gamePick.headshot && <img src={gamePick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
                                   <div className="flex-1 min-w-0">
                                     <div className="text-sm font-bold text-white truncate">{gamePick.player}</div>
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-[10px] text-gray-500">{gamePick.teamAbbr} · {gamePick.pos}</span>
-                                      {live && (live.status === 'hit' || live.status === 'winning') && (
+                                      {!resolved && live && (live.status === 'hit' || live.status === 'winning') && (
                                         <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold border border-green-500/30 whitespace-nowrap">
                                           {live.status === 'hit' ? 'HITTING' : 'ON PACE'} {live.current}
                                         </span>
                                       )}
-                                      {live?.status === 'behind' && (
+                                      {!resolved && live?.status === 'behind' && (
                                         <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-gray-500 font-medium whitespace-nowrap">
                                           BEHIND {live.current}
                                         </span>
@@ -11296,7 +11306,7 @@ function DailyPicks() {
                                     </div>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <div className="text-sm font-black text-team-secondary"><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
+                                    <div className={`text-sm font-black ${resolved ? (resolved.result === 'hit' ? 'text-green-400' : 'text-red-400') : 'text-team-secondary'}`}><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
                                     <div className="flex items-center gap-1.5 justify-end">
                                       <span className="text-xs text-green-400 font-bold">+{gamePick.edge}</span>
                                       <span className="text-[10px] text-gray-500">{gamePick.confidence}%</span>
@@ -11624,14 +11634,34 @@ function DailyPicks() {
         const winPct = resolved.length > 0 ? Math.round((hits.length / resolved.length) * 100) : 0;
         const pending = engine.history.filter(h => !h.result);
 
-        // Group all picks by date
+        // Group all picks by date, sort: pending days first then descending
         const byDate = {};
         engine.history.forEach(h => {
           const d = h.date || 'Unknown';
           if (!byDate[d]) byDate[d] = [];
           byDate[d].push(h);
         });
-        const dates = Object.keys(byDate).sort().reverse();
+        // Sort picks within each day: pending first, then hits, then misses
+        Object.values(byDate).forEach(picks => {
+          picks.sort((a, b) => {
+            if (!a.result && b.result) return -1;
+            if (a.result && !b.result) return 1;
+            if (a.result === 'hit' && b.result === 'miss') return -1;
+            if (a.result === 'miss' && b.result === 'hit') return 1;
+            return 0;
+          });
+        });
+        // Sort dates: days with pending picks first, then reverse chronological
+        const dates = Object.keys(byDate).sort((a, b) => {
+          const aHasPending = byDate[a].some(h => !h.result);
+          const bHasPending = byDate[b].some(h => !h.result);
+          if (aHasPending && !bHasPending) return -1;
+          if (!aHasPending && bHasPending) return 1;
+          // Parse dates for proper chronological sorting
+          const [ay, am, ad] = a.split('-').map(Number);
+          const [by, bm, bd] = b.split('-').map(Number);
+          return (by * 10000 + bm * 100 + bd) - (ay * 10000 + am * 100 + ad);
+        });
 
         return (
           <div className="mt-8">
