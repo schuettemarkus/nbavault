@@ -9961,25 +9961,44 @@ async function submitEmailSubscription(subscriberEmail, pickData, source) {
   emails.push({ email: subscriberEmail, date: new Date().toISOString(), source: source || 'vault' });
   localStorage.setItem('nbavault_email_list', JSON.stringify(emails));
 
-  // Send to FormSubmit.co — delivers notification to site owner
+  // Send via hidden iframe form POST — bypasses FormSubmit's AJAX origin check
   try {
-    const resp = await fetch(FORMSUBMIT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        email: subscriberEmail,
-        _subject: `New NBA Vault subscriber: ${subscriberEmail}`,
-        _replyto: subscriberEmail,
-        source: source || 'vault',
-        vault_lock: pickData ? `${pickData.player} O ${pickData.line} ${pickData.statType} (+${pickData.edge} edge)` : 'No picks today',
-        timestamp: new Date().toISOString(),
-        _template: 'table',
-        _captcha: 'false',
-      }),
+    const iframeName = 'formsubmit_frame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `https://formsubmit.co/${FORMSUBMIT_HASH}`;
+    form.target = iframeName;
+
+    const fields = {
+      email: subscriberEmail,
+      _subject: `New NBA Vault subscriber: ${subscriberEmail}`,
+      _replyto: subscriberEmail,
+      source: source || 'vault',
+      vault_lock: pickData ? `${pickData.player} O ${pickData.line} ${pickData.statType} (+${pickData.edge} edge)` : 'No picks today',
+      _template: 'table',
+      _captcha: 'false',
+      _next: 'https://nbavault.com/vault',
+    };
+
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
     });
-    const result = await resp.json().catch(() => null);
-    if (result) console.log('[NBA Vault] Email subscription:', result.success === 'true' ? 'sent' : result.message);
-    return result?.success === 'true';
+
+    document.body.appendChild(form);
+    form.submit();
+    // Cleanup after submission
+    setTimeout(() => { form.remove(); iframe.remove(); }, 5000);
+    console.log('[NBA Vault] Email subscription submitted');
+    return true;
   } catch (e) {
     console.warn('[NBA Vault] Email submission failed:', e.message);
     return false;
