@@ -5707,16 +5707,20 @@ function getTeamData(config, field) {
       const teamNeeds = needs[config.abbr] || ['SF','PG'];
       return config.prospects.map(p => {
         if (config.abbr === 'UTA') return { ...p, teamFit: p.jazzFit || 5, teamFitAnalysis: p.jazzFitAnalysis || '' };
-        const posMatch = teamNeeds.some(n => (p.pos || '').includes(n));
+        const matchedNeeds = teamNeeds.filter(n => (p.pos || '').includes(n));
+        const posMatch = matchedNeeds.length > 0;
         const baseFit = posMatch ? 7 : 4;
         const fit = Math.min(10, Math.max(3, baseFit + ((p.rank * 7 + config.abbr.charCodeAt(0)) % 5) - 2));
-        const needStr = teamNeeds.join('/');
         const starters = (config.players || []).filter(pl => pl.starter);
         const topPlayer = starters.sort((a, b) => b.stats.ppg - a.stats.ppg)[0];
         const topName = topPlayer ? topPlayer.name.split(' ').pop() : 'the core';
-        const fitText = fit >= 8 ? `${p.name} fills a direct need at ${needStr} for the ${config.fullName}. His skill set complements ${topName} and he could earn rotation minutes under ${config.coach} immediately.`
-          : fit >= 6 ? `${p.name} is a solid option for the ${config.fullName}. While not a perfect positional match, his upside and versatility give ${config.coach} flexibility. Could develop alongside ${topName}.`
-          : `The fit with the ${config.fullName} is limited. ${p.name} overlaps with existing roster pieces and the team's primary needs are at ${needStr}. Better served picking for need.`;
+        const playerPos = p.pos || 'wing';
+        const needStr = teamNeeds.join('/');
+        const fitText = fit >= 8
+          ? `${p.name} fills a direct need at ${matchedNeeds[0] || playerPos} for the ${config.fullName}. His skill set complements ${topName} and he could earn rotation minutes under ${config.coach} immediately.`
+          : fit >= 6
+          ? `${p.name} is a solid ${playerPos} option for the ${config.fullName}. His upside and versatility give ${config.coach} flexibility. Could develop alongside ${topName}.`
+          : `The fit with the ${config.fullName} is limited. ${p.name} plays ${playerPos} but the team's primary needs are at ${needStr}. Better served picking for need.`;
         return { ...p, teamFit: fit, teamFitAnalysis: fitText };
       });
     }
