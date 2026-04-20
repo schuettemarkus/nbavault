@@ -24,6 +24,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://unpkg.com" crossorigin />
 <link rel="dns-prefetch" href="https://unpkg.com" />
+<link rel="dns-prefetch" href="https://corsproxy.io" />
+<link rel="dns-prefetch" href="https://api.codetabs.com" />
+<link rel="dns-prefetch" href="https://api.the-odds-api.com" />
 <!-- Font loaded as link (non-blocking) instead of @import (blocking) -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" />
 <!-- Tailwind must be sync (generates utility classes before paint) -->
@@ -87,6 +90,7 @@ body { font-family: 'Inter', sans-serif; background: var(--team-midnight); color
 .pulse-dot { animation: pulse-dot 2s infinite; }
 .shimmer { background: linear-gradient(90deg, transparent, rgba(var(--team-secondary-rgb),0.1), transparent); background-size: 200% 100%; animation: shimmer 3s infinite; }
 .glass { background: rgba(var(--team-primary-rgb),0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(var(--team-primary-rgb),0.25); contain: paint; }
+img[loading="lazy"] { content-visibility: auto; }
 .team-secondary-gradient { background: linear-gradient(135deg, var(--team-secondary), color-mix(in srgb, var(--team-secondary), white 20%), var(--team-secondary)); }
 .team-primary-gradient { background: linear-gradient(135deg, var(--team-midnight), var(--team-primary)); }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -11789,7 +11793,7 @@ function WikiPage() {
               { name: 'The Odds API', desc: 'Real-time player prop lines from DraftKings and FanDuel — cached locally to minimize API usage', url: 'https://the-odds-api.com' },
               { name: 'NBA CDN Scoreboard', desc: 'Live game schedule, scores, and box scores via the NBA\'s public CDN endpoint' },
               { name: 'EmailJS', desc: 'Client-side email delivery for welcome emails with Pick of the Day data', url: 'https://emailjs.com' },
-              { name: 'Jest', desc: '92-test suite covering structure, theming, data integrity, security, and regression — runs automatically via pre-commit hook' },
+              { name: 'Jest + Babel Parser', desc: '114-test suite covering structure, theming, data integrity, JSX syntax validation, security, and regression — runs automatically via pre-commit hook' },
             ].map((t, i) => (
               <div key={i} className="rounded-xl p-4 border border-team-primary/20" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
                 <div className="flex items-center gap-2 mb-1">
@@ -11939,6 +11943,8 @@ function LandingPage() {
     { q: 'Are these bets guaranteed to win?', a: 'No bet is ever guaranteed. Our model identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual bets can and will lose.' },
     { q: 'How often do picks win?', a: 'Our model targets a 55-65% hit rate on player props. The Best Bet of the Day has a higher bar — we only surface the single highest-confidence play each day.' },
     { q: 'What sportsbooks does this work with?', a: 'Our picks work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
+    { q: 'How does the Draft Simulator work?', a: 'The SIM tab runs a full interactive 2026 NBA Draft experience. The lottery determines draft order using real odds from Tankathon. AI teams pick based on positional needs and roster analysis. You make the pick for your team with full scouting reports, pro comparisons, and projected lineup impact. You can continue through all 30 first-round picks.' },
+    { q: 'How does the Trade Center work?', a: 'The TRADE tab lets you build trades between any two teams, with a live fairness meter, player valuations, and AI-generated trade suggestions based on your team\'s needs. After executing a trade, both teams receive report cards with stat impact analysis and need-fit evaluation.' },
     { q: 'How are picks generated?', a: 'Our projection model factors in matchup quality (opponent defensive rating), recent form, home/away splits, injury impact, and minutes consistency. The engine self-calibrates based on tracked results.' },
     { q: 'Can I cancel anytime?', a: 'Yes. No contracts, no commitments. Cancel your $19/month subscription at any time with one click.' },
   ];
@@ -12246,9 +12252,9 @@ function FAQPage() {
   const [openIdx, setOpenIdx] = useState(null);
 
   const faqs = [
-    { q: 'How do the Daily Picks work?', a: 'Our projection model uses 7 factors — opponent defense rank, pace, recent form, home/away splits, injury impact, minutes consistency, and edge decay — to project player stats. These projections are compared against real sportsbook lines from DraftKings and FanDuel to surface positive-edge plays.' },
-    { q: 'Are the betting lines real?', a: 'When sportsbook data is available, lines come directly from DraftKings and FanDuel via The Odds API. When live lines aren\'t available, the engine uses model-projected lines. A "Live lines" indicator appears in the Vault Engine section when real lines are active.' },
-    { q: 'How does the engine learn?', a: 'The Vault Engine self-calibrates after every resolved pick. It tracks which factors (matchup, form, injury, etc.) correlated with wins and adjusts their weight for future picks. The more picks that resolve, the smarter the model gets.' },
+    { q: 'How do the Daily Picks work?', a: 'Our projection model uses 7 factors — opponent defense rank, pace, recent form, home/away splits, injury impact, minutes consistency, and edge decay — to project player stats. Projections are compared against real sportsbook lines from DraftKings and FanDuel to surface positive-edge plays. Picks are locked in once generated each day for consistency.' },
+    { q: 'Are the betting lines real?', a: 'When sportsbook data is available, lines come directly from DraftKings and FanDuel via The Odds API. When live lines aren\'t available, the engine uses model-projected lines based on season averages. Live line picks receive a confidence bonus since they\'re verified by the market.' },
+    { q: 'How does the engine learn?', a: 'The engine self-calibrates after every resolved pick using a Bayesian feedback loop. It stores two learning signals per pick — projection error (how far off the model was) and edge reliability (whether the edge direction predicted correctly). If projection errors are consistently high, the model reduces matchup weight. If edge direction is unreliable, it reduces multiple factor weights.' },
     { q: 'Are these bets guaranteed to win?', a: 'No bet is ever guaranteed. Our model identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual bets can and will lose.' },
     { q: 'How do I switch teams?', a: 'Click the team logo in the navigation bar to open the team selector. Your selection is saved automatically and persists across sessions.' },
     { q: 'What data does each team have?', a: 'All 30 NBA teams have real rosters with player names, stats, headshot images, scouting reports, and player comparisons. Every team has 25 draft prospects with team-specific fit analysis, dynamic positional needs, 25 custom poll questions, a lineup builder, and a trade machine.' },
@@ -12258,6 +12264,8 @@ function FAQPage() {
     { q: 'Is this an official NBA product?', a: 'No. NBA Vault is an independent project with no affiliation to the NBA, any NBA team, or the National Basketball Players Association. All team names, logos, and player likenesses are property of their respective owners.' },
     { q: 'What browsers are supported?', a: 'Any modern browser (Chrome, Firefox, Safari, Edge) with JavaScript enabled. Works on desktop and mobile.' },
     { q: 'What sportsbooks does this work with?', a: 'Our picks work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
+    { q: 'How does the Draft Simulator work?', a: 'The SIM tab runs a full interactive 2026 NBA Draft experience. The lottery determines draft order using real odds from Tankathon. AI teams pick based on positional needs and roster analysis. You make the pick for your team with full scouting reports, pro comparisons, and projected lineup impact. You can continue through all 30 first-round picks.' },
+    { q: 'How does the Trade Center work?', a: 'The TRADE tab lets you build trades between any two teams, with a live fairness meter, player valuations, and AI-generated trade suggestions based on your team\'s needs. After executing a trade, both teams receive report cards with stat impact analysis and need-fit evaluation.' },
   ];
 
   return (
