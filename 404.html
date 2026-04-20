@@ -10095,7 +10095,6 @@ function autoResolvePicks(engine, liveStats, games) {
   let changed = false;
   const history = (engine.history || []).map(h => {
     if (h.result) return h;
-    // Only resolve picks from today
     if (h.date !== todayKey) return h;
     const stats = liveStats[h.player];
     if (!stats) return h;
@@ -10103,7 +10102,21 @@ function autoResolvePicks(engine, liveStats, games) {
     if (stats.MIN < 5) return h;
     const result = actual >= h.line ? 'hit' : 'miss';
     changed = true;
-    return { ...h, result, actual };
+
+    // Learning data: 2 contextual insights per resolved pick
+    // 1. Accuracy delta: how far off was the projection from actual?
+    const projectionError = h.projection ? +(actual - h.projection).toFixed(1) : 0;
+    // 2. Edge reliability: did the edge direction predict correctly?
+    const edgeReliable = (h.edge > 0 && actual >= h.line) || (h.edge < 0 && actual < h.line);
+
+    return {
+      ...h, result, actual,
+      // Contextual learning signals
+      projectionError,    // +3.2 means actual exceeded projection by 3.2
+      edgeReliable,       // true = edge direction was correct
+      minutesPlayed: stats.MIN || 0,
+      wasBlowout: stats.MIN < 25 && h.line >= 20, // Star sat early in blowout
+    };
   });
 
   // Remove orphaned pending picks not from today (phantom games that never happened)
@@ -10119,8 +10132,9 @@ function autoResolvePicks(engine, liveStats, games) {
 
   if (!changed) return null;
 
-  // Update accuracy tiers
-  updated.history.filter(h => h.result && !engine.history.find(oh => oh.id === h.id && oh.result)).forEach(h => {
+  // Update accuracy tiers + learning feedback loop
+  const newlyResolved = updated.history.filter(h => h.result && !engine.history.find(oh => oh.id === h.id && oh.result));
+  newlyResolved.forEach(h => {
     const tier = h.confidence >= 70 ? 'high' : h.confidence >= 50 ? 'mid' : 'low';
     updated.accuracy[tier] = updated.accuracy[tier] || { hits: 0, total: 0 };
     updated.accuracy[tier].total += 1;
@@ -10129,6 +10143,31 @@ function autoResolvePicks(engine, liveStats, games) {
     updated.statAccuracy[h.statType].total += 1;
     if (h.result === 'hit') updated.statAccuracy[h.statType].hits += 1;
   });
+
+  // Learning feedback: aggregate insights from resolved picks
+  if (newlyResolved.length > 0) {
+    updated._feedback = updated._feedback || { avgError: 0, totalResolved: 0, blowouts: 0, edgeReliability: 0, edgeTotal: 0 };
+    const fb = updated._feedback;
+    newlyResolved.forEach(h => {
+      fb.totalResolved++;
+      fb.avgError = ((fb.avgError * (fb.totalResolved - 1)) + Math.abs(h.projectionError || 0)) / fb.totalResolved;
+      if (h.wasBlowout) fb.blowouts++;
+      fb.edgeTotal++;
+      if (h.edgeReliable) fb.edgeReliability++;
+    });
+    // Adaptive learning: if projection error is consistently high, tighten edge decay
+    if (fb.totalResolved >= 5 && fb.avgError > 4) {
+      // Projections are overshooting — reduce matchup weight
+      const w = updated.weights;
+      w.matchup = Math.max(0.5, (w.matchup || 1) - 0.02);
+    }
+    // If edge direction is unreliable (< 50%), reduce confidence in large edges
+    if (fb.edgeTotal >= 5 && fb.edgeReliability / fb.edgeTotal < 0.5) {
+      const w = updated.weights;
+      w.matchup = Math.max(0.5, (w.matchup || 1) - 0.03);
+      w.homeAway = Math.max(0.5, (w.homeAway || 1) - 0.02);
+    }
+  }
 
   updated.weights = calibrateWeights(updated);
   updated.lastCalibrated = new Date().toISOString();
@@ -11607,6 +11646,12 @@ function DailyPicks() {
                           <span className="font-bold text-white truncate" style={{ minWidth: '80px', maxWidth: '120px' }}>{h.player}</span>
                           <span className="text-gray-500"><span className="text-[8px] font-bold uppercase px-1 py-px rounded bg-white/[0.06] text-gray-400 mr-0.5">OVR</span>{h.line} {h.statType}</span>
                           {h.actual != null && <span className="text-white font-bold">{h.actual}</span>}
+                          {h.result && h.projectionError != null && (
+                            <span className={`text-[9px] font-bold ${h.projectionError >= 0 ? 'text-green-500/60' : 'text-red-500/60'}`}>
+                              {h.projectionError >= 0 ? '+' : ''}{h.projectionError}
+                            </span>
+                          )}
+                          {h.wasBlowout && <span className="text-[8px] text-orange-400/60">BLO</span>}
                           <span className="ml-auto">
                             {h.result === 'hit' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400">HIT</span>}
                             {h.result === 'miss' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">MISS</span>}
