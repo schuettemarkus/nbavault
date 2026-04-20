@@ -5707,21 +5707,71 @@ function getTeamData(config, field) {
       const teamNeeds = needs[config.abbr] || ['SF','PG'];
       return config.prospects.map(p => {
         if (config.abbr === 'UTA') return { ...p, teamFit: p.jazzFit || 5, teamFitAnalysis: p.jazzFitAnalysis || '' };
-        const matchedNeeds = teamNeeds.filter(n => (p.pos || '').includes(n));
-        const posMatch = matchedNeeds.length > 0;
-        const baseFit = posMatch ? 7 : 4;
-        const fit = Math.min(10, Math.max(3, baseFit + ((p.rank * 7 + config.abbr.charCodeAt(0)) % 5) - 2));
+
+        // Rich fit analysis using actual roster data
         const starters = (config.players || []).filter(pl => pl.starter);
-        const topPlayer = starters.sort((a, b) => b.stats.ppg - a.stats.ppg)[0];
-        const topName = topPlayer ? topPlayer.name.split(' ').pop() : 'the core';
-        const playerPos = p.pos || 'wing';
-        const needStr = teamNeeds.join('/');
-        const fitText = fit >= 8
-          ? `${p.name} fills a direct need at ${matchedNeeds[0] || playerPos} for the ${config.fullName}. His skill set complements ${topName} and he could earn rotation minutes under ${config.coach} immediately.`
-          : fit >= 6
-          ? `${p.name} is a solid ${playerPos} option for the ${config.fullName}. His upside and versatility give ${config.coach} flexibility. Could develop alongside ${topName}.`
-          : `The fit with the ${config.fullName} is limited. ${p.name} plays ${playerPos} but the team's primary needs are at ${needStr}. Better served picking for need.`;
-        return { ...p, teamFit: fit, teamFitAnalysis: fitText };
+        const bench = (config.players || []).filter(pl => !pl.starter);
+        const allPlayers = [...starters, ...bench];
+        const last = p.name.split(' ').pop();
+        const playerPos = p.pos || 'SF';
+        const primaryPos = playerPos.split('/')[0];
+
+        // Find who plays the same position
+        const posMap = { PG: ['PG'], SG: ['SG','G'], SF: ['SF','F','GF'], PF: ['PF','F'], C: ['C'] };
+        const overlapping = starters.filter(pl => (posMap[primaryPos] || []).some(pp => (pl.pos || '').includes(pp)));
+        const overlapNames = overlapping.map(pl => pl.name.split(' ').pop());
+        const bestScorer = starters.sort((a, b) => b.stats.ppg - a.stats.ppg)[0];
+        const bestScorerName = bestScorer ? bestScorer.name.split(' ').pop() : null;
+        const bestPasser = starters.sort((a, b) => b.stats.apg - a.stats.apg)[0];
+        const bestPasserName = bestPasser ? bestPasser.name.split(' ').pop() : null;
+
+        // Position need match
+        const matchedNeeds = teamNeeds.filter(n => playerPos.includes(n));
+        const posMatch = matchedNeeds.length > 0;
+
+        // Calculate fit score from multiple factors
+        let fit = 5;
+        if (posMatch) fit += 2;
+        if (p.rank <= 5) fit += 1; // top talent bonus
+        if (overlapping.length === 0) fit += 1; // no roster overlap
+        if (overlapping.length >= 2) fit -= 1; // crowded position
+        const radar = p.radar || {};
+        if (posMatch && radar.Defense >= 70) fit += 1; // defensive prospect for a need pos
+        if (radar.Shooting >= 75) fit += 1; // shooting is always valuable
+        fit = Math.min(10, Math.max(3, fit));
+
+        // Build analysis text
+        const parts = [];
+        const compsStr = (p.comps || []).length > 0 ? ` Scouts compare him to ${p.comps[0]}.` : '';
+
+        if (posMatch && overlapping.length === 0) {
+          parts.push(`${last} fills a clear gap at ${matchedNeeds[0]} for the ${config.fullName} — there's no starter at his position.`);
+        } else if (posMatch) {
+          parts.push(`${last} addresses the ${config.fullName}'s need at ${matchedNeeds[0]}, though he'd compete with ${overlapNames[0] || 'the current starter'} for minutes.`);
+        } else {
+          parts.push(`${last} plays ${playerPos}, which isn't the ${config.fullName}'s top priority (${teamNeeds.join('/')}).`);
+        }
+
+        // Roster synergy
+        if (bestScorerName && primaryPos !== 'PG' && bestPasserName) {
+          parts.push(`With ${bestPasserName} creating and ${bestScorerName} drawing attention, ${last} would get quality looks.`);
+        } else if (bestScorerName) {
+          parts.push(`Playing alongside ${bestScorerName} would give ${last} room to operate.`);
+        }
+
+        // Prospect strengths in team context
+        if (radar.Shooting >= 75) parts.push(`His shooting (${radar.Shooting}/100) adds floor spacing ${config.coach} can build around.`);
+        else if (radar.Defense >= 75) parts.push(`His defensive upside (${radar.Defense}/100) is exactly what ${config.coach} values.`);
+        else if (radar.Athleticism >= 85) parts.push(`Elite athleticism gives ${config.coach} a dynamic weapon in transition.`);
+        else if (radar.Playmaking >= 75) parts.push(`His playmaking (${radar.Playmaking}/100) adds a creative dimension to the offense.`);
+
+        // Concerns
+        if (overlapping.length >= 2) parts.push(`Roster fit is tight — ${overlapNames.join(' and ')} already occupy his position.`);
+        if (p.concerns && p.concerns[0]) parts.push(p.concerns[0].split(' — ')[0] + '.');
+
+        parts.push(compsStr.trim());
+
+        return { ...p, teamFit: fit, teamFitAnalysis: parts.filter(Boolean).join(' ') };
       });
     }
     return generateStubProspects(config);
