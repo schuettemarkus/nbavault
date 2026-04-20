@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="NBA Vault — Roster breakdowns, mock draft simulator, trade machine, lineup builder, and fan polls for all 30 NBA teams" />
 <meta name="referrer" content="no-referrer" />
-<meta property="og:title" content="NBA Vault — Find the Best NBA Bets in 60 Seconds" />
-<meta property="og:description" content="Real sportsbook lines from DraftKings & FanDuel. Player prop picks with edge calculations, matchup analysis, and a self-improving model. Free Pick of the Day." />
+<meta property="og:title" content="NBA Vault — Unlock the Vault for NBA Betting Edges" />
+<meta property="og:description" content="Vault Engine analyzes injuries, matchups, and player trends to detect mispriced betting lines. Real DraftKings & FanDuel lines. Free Vault Lock of the Day." />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://nbavault.com/picks" />
+<meta property="og:url" content="https://nbavault.com/vault" />
 <meta property="og:image" content="https://nbavault.com/og-card.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="NBA Vault — Daily NBA Betting Edges" />
-<meta name="twitter:description" content="Real DraftKings/FanDuel lines. Pick of the Day with edge % and confidence scores. Public track record — every pick, every outcome." />
+<meta name="twitter:title" content="NBA Vault — Vault Engine Betting Intelligence" />
+<meta name="twitter:description" content="Real DraftKings/FanDuel lines. Vault Lock of the Day with edge % and Vault Scores. Full transparency — every signal, every outcome." />
 <meta name="twitter:image" content="https://nbavault.com/og-card.png" />
 <title>NBA Vault</title>
 <link rel="manifest" href="manifest.json" />
@@ -5447,6 +5447,42 @@ const VAULT_COLORS = {
   deep: '#111428', light: '#2A3060', black: '#000000'
 };
 
+// Centralized Vault naming system — single source of truth for all UI copy
+const VAULT = {
+  brand: 'NBA Vault',
+  product: 'The Vault',
+  engine: 'Vault Engine',
+  signal: 'Vault Signal',
+  signals: 'Vault Signals',
+  lock: 'Vault Lock',
+  lockFull: 'Vault Lock of the Day',
+  projection: 'Vault Projection',
+  edge: 'Vault Edge',
+  score: 'Vault Score',
+  cta: 'Unlock the Vault',
+  ctaSignals: 'View Free Vault Signals',
+  ctaFull: 'Unlock Full Vault Access',
+  tagline: 'NBA betting edge intelligence',
+  heroHeadline: 'Unlock the Vault for NBA Betting Edges',
+  heroSub: 'Vault Engine analyzes injuries, matchups, and player trends to detect mispriced betting lines in real time.',
+  picksSub: 'Real-time NBA betting edges detected by the Vault Engine',
+  whatIs: 'The Vault is a real-time NBA betting intelligence system that surfaces high-probability edges before the market adjusts.',
+  urgency: 'Vault updates daily before tipoff. Edges disappear as lines move.',
+  pillars: [
+    { title: 'Injury Leverage', desc: 'When key players sit, lines lag behind. The Vault detects the gap before books adjust.', icon: '&#9888;' },
+    { title: 'Trend Compression', desc: 'Hot streaks, matchup history, and pace data compressed into a single edge score.', icon: '&#9650;' },
+    { title: 'Market Delay', desc: 'Sportsbooks are slow to move. The Vault Engine finds where projections exceed posted lines.', icon: '&#9733;' },
+  ],
+  badges: { injury: 'Injury Boost', mismatch: 'Mismatch Detected', tempo: 'Tempo Edge' },
+  price: '$19/month',
+  priceFeatures: [
+    'Full Vault Signals board (all games)',
+    'Vault Lock of the Day',
+    'Injury Intelligence alerts',
+    'Market Edge notifications',
+  ],
+};
+
 const TEAM_CONFIGS = {
   ATL: { abbr: 'ATL', city: 'Atlanta', name: 'Hawks', fullName: 'Atlanta Hawks', conference: 'East',
     colors: { primary: '#E03A3E', secondary: '#C1D32F', midnight: '#1A0000', deep: '#2D0A0A', light: '#FF6B6B', black: '#000000' },
@@ -9937,7 +9973,7 @@ async function sendWelcomeEmail(toEmail, pickData) {
       pick_line: pickData ? `O ${pickData.line} ${pickData.statType}` : 'Check nbavault.com',
       pick_edge: pickData ? `+${pickData.edge}` : '',
       pick_confidence: pickData ? `${pickData.confidence}%` : '',
-      pick_explanation: pickData?.explanation || 'Visit nbavault.com/picks for today\'s edges.',
+      pick_explanation: pickData?.explanation || 'Visit nbavault.com/vault for today\'s Vault Signals.',
       pick_team: pickData ? `${pickData.teamAbbr} vs ${pickData.opponent}` : '',
     });
     return true;
@@ -10322,7 +10358,7 @@ function generateLine(projection, seed) {
 }
 
 // ---- BEST BET SELECTION: Multi-layer confidence filter ----
-// The Best Bet needs a near-guaranteed hit rate. We stack 5 filters:
+// The Vault Lock needs a near-guaranteed hit rate. We stack 5 filters:
 function selectBestBet(picks) {
   if (picks.length === 0) return null;
 
@@ -10851,7 +10887,7 @@ function DailyPicks() {
       emails.push({ email: emailInput, date: new Date().toISOString() });
       localStorage.setItem('nbavault_email_list', JSON.stringify(emails));
       setEmailSubmitted(true);
-      // Send welcome email with today's Pick of the Day
+      // Send welcome email with today's Vault Lock
       sendWelcomeEmail(emailInput, bestPick);
     }
   };
@@ -10879,11 +10915,11 @@ function DailyPicks() {
   return (
     <section className="py-8 px-4 max-w-5xl mx-auto">
 
-      {/* Win Rate Transparency Bar */}
+      {/* Vault Performance Bar */}
       {(winTracker.bestBetRecord.wins + winTracker.bestBetRecord.losses) > 0 && (
         <div className="flex items-center justify-center gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-gray-500">Top Pick Record:</span>
+            <span className="text-gray-500">{VAULT.lock} Record:</span>
             <span className="font-black text-green-400">{winTracker.bestBetRecord.wins}W</span>
             <span className="text-gray-600">-</span>
             <span className="font-black text-red-400">{winTracker.bestBetRecord.losses}L</span>
@@ -10909,7 +10945,7 @@ function DailyPicks() {
         const yHits = yPicks.filter(h => h.result === 'hit').length;
         const yMisses = yPicks.length - yHits;
         const yPct = Math.round((yHits / yPicks.length) * 100);
-        const shareText = `Yesterday's NBA Vault picks: ${yHits}-${yMisses} (${yPct}%)\n\n${yPicks.map(h => `${h.result === 'hit' ? '✅' : '❌'} ${h.player} O ${h.line} ${h.statType}${h.actual != null ? ` → ${h.actual}` : ''}`).join('\n')}\n\nFree daily picks at nbavault.com/picks`;
+        const shareText = `Yesterday's ${VAULT.signals}: ${yHits}-${yMisses} (${yPct}%)\n\n${yPicks.map(h => `${h.result === 'hit' ? '✅' : '❌'} ${h.player} O ${h.line} ${h.statType}${h.actual != null ? ` → ${h.actual}` : ''}`).join('\n')}\n\nFree signals at nbavault.com/vault`;
         return (
           <div className="glass rounded-xl p-3 mb-6 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
@@ -10933,17 +10969,29 @@ function DailyPicks() {
       {!loadingGames && allPicks.length === 0 && (
         <div className="glass rounded-2xl p-8 text-center mb-8">
           <p className="text-2xl mb-3">&#127936;</p>
-          <h3 className="text-lg font-bold text-white mb-2">No Games Available</h3>
-          <p className="text-gray-400 text-sm max-w-md mx-auto">There are no NBA games with available picks right now. Check back before tip-off for today's edges.</p>
+          <h3 className="text-lg font-bold text-white mb-2">No Signals Available</h3>
+          <p className="text-gray-400 text-sm max-w-md mx-auto">There are no NBA games with available signals right now. The {VAULT.engine} activates before tip-off.</p>
         </div>
       )}
 
-      {/* Pick of the Day */}
-      {bestPick && (() => { const bestLive = getLiveStatus(bestPick, liveStats); return (
+      {/* Vault Lock of the Day */}
+      {bestPick && (() => {
+        const bestLive = getLiveStatus(bestPick, liveStats);
+        const bestResolved = engine.history.find(h => h.player === bestPick.player && h.statType === bestPick.statType && h.result);
+        // Determine effective status: resolved from history, or live 'hit' counts as HIT too
+        const bestStatus = bestResolved ? bestResolved.result : bestLive?.status === 'hit' ? 'hit' : bestLive?.status === 'winning' ? 'winning' : bestLive?.status === 'behind' ? 'behind' : null;
+        const bestActual = bestResolved?.actual ?? bestLive?.current ?? null;
+        const isHit = bestStatus === 'hit';
+        const isMiss = bestStatus === 'miss';
+        const isWinning = bestStatus === 'winning';
+        const isBehind = bestStatus === 'behind';
+        const isResolved = isHit || isMiss;
+        const borderColor = isHit || isWinning ? '#22c55e' : isMiss ? '#ef4444' : isBehind ? '#eab308' : 'var(--team-secondary)';
+        return (
         <div className="rounded-2xl mb-8 relative overflow-hidden" style={{
           background: 'linear-gradient(135deg, rgba(var(--team-secondary-rgb),0.12) 0%, rgba(var(--team-primary-rgb),0.2) 40%, rgba(var(--team-midnight-rgb),0.95) 100%)',
-          border: '2px solid var(--team-secondary)',
-          boxShadow: '0 0 30px rgba(var(--team-secondary-rgb),0.25), 0 0 60px rgba(var(--team-secondary-rgb),0.1)'
+          border: `2px solid ${borderColor}`,
+          boxShadow: isHit || isWinning ? '0 0 30px rgba(34,197,94,0.2)' : isMiss ? '0 0 30px rgba(239,68,68,0.2)' : isBehind ? '0 0 30px rgba(234,179,8,0.15)' : '0 0 30px rgba(var(--team-secondary-rgb),0.25), 0 0 60px rgba(var(--team-secondary-rgb),0.1)'
         }}>
           {/* Animated glow bar at top */}
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, var(--team-secondary), transparent)', animation: 'shimmer 3s infinite' }} />
@@ -10970,10 +11018,10 @@ function DailyPicks() {
             <div className="flex-1 p-4 md:p-5 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-team-secondary">Pick of the Day</span>
+                  <svg className="w-4 h-4 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-team-secondary">{VAULT.lockFull}</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-team-secondary text-black text-[10px] font-black">FREE PICK</span>
+                <span className="px-2 py-0.5 rounded-full bg-team-secondary text-black text-[10px] font-black">FREE SIGNAL</span>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -10988,35 +11036,33 @@ function DailyPicks() {
               </div>
 
               <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded-lg bg-green-500/20 text-green-400 text-xs font-black border border-green-500/30">+{bestPick.edge} edge</span>
+                <span className="px-2 py-0.5 rounded-lg bg-green-500/20 text-green-400 text-xs font-black border border-green-500/30">+{bestPick.edge} {VAULT.edge.split(' ')[1].toLowerCase()}</span>
                 <span className="px-2 py-0.5 rounded-lg text-xs font-black border" style={{
                   background: `rgba(var(--team-secondary-rgb),0.15)`,
                   borderColor: `rgba(var(--team-secondary-rgb),0.3)`,
                   color: 'var(--team-secondary)'
-                }}>{bestPick.confidence}%</span>
+                }}>{bestPick.confidence}% {VAULT.score.split(' ')[1]}</span>
                 {bestPick.injury && (
                   <span className="px-2 py-0.5 rounded-lg bg-green-500/15 text-green-400 text-xs font-bold border border-green-500/30">
-                    &#9650; {bestPick.injury.out} OUT
+                    &#9650; {VAULT.badges.injury}
                   </span>
                 )}
               </div>
 
               <p className="text-xs text-gray-300 mt-2 leading-relaxed max-w-2xl">{bestPick.explanation}</p>
 
-              {bestLive && (
-                <div className={`mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${bestLive.status === 'hit' || bestLive.status === 'winning' ? 'bg-green-500/15 border border-green-500/30' : 'bg-white/5 border border-white/10'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${bestLive.status === 'hit' || bestLive.status === 'winning' ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`} />
-                  <span className={`font-black ${bestLive.status === 'hit' || bestLive.status === 'winning' ? 'text-green-400' : 'text-gray-500'}`}>
-                    {bestLive.status === 'hit' ? 'HITTING' : bestLive.status === 'winning' ? 'ON PACE' : 'BEHIND'}
-                  </span>
+              {/* Inline live stats — only when live and not yet resolved/hit */}
+              {bestLive && !isResolved && isWinning && (
+                <div className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs bg-green-500/15 border border-green-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="font-black text-green-400">ON PACE</span>
                   <span className="text-gray-300">{bestLive.current} {bestPick.statType} · {bestLive.minutesPlayed} min</span>
-                  {bestLive.status !== 'hit' && <span className="text-gray-500 ml-auto text-[10px]">Pace: {bestLive.paceProjection}</span>}
                 </div>
               )}
 
               {/* Share on X */}
               <div className="flex justify-end mt-2">
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Today's best NBA bet: ${bestPick.player} O ${bestPick.line} ${bestPick.statType} (+${bestPick.edge} edge, ${bestPick.confidence}% confidence)\n\nFree daily picks at nbavault.com`)}`}
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${VAULT.lockFull}: ${bestPick.player} O ${bestPick.line} ${bestPick.statType} (+${bestPick.edge} edge, ${bestPick.confidence}% score)\n\nFree signals at nbavault.com/vault`)}`}
                   target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-gray-500 hover:text-white hover:bg-white/10 transition-all">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -11025,6 +11071,32 @@ function DailyPicks() {
               </div>
             </div>
           </div>
+          {/* Result badge — integrated bottom bar */}
+          {isHit ? (
+            <div className="flex items-center justify-center gap-2 py-2.5 px-4 border-t bg-green-500/10 border-green-500/20">
+              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span className="text-sm font-black tracking-wider text-green-400">HIT</span>
+              {bestActual != null && <span className="text-xs font-bold text-white">{bestActual} {bestPick.statType} actual</span>}
+            </div>
+          ) : isMiss ? (
+            <div className="flex items-center justify-center gap-2 py-2.5 px-4 border-t bg-red-500/10 border-red-500/20">
+              <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span className="text-sm font-black tracking-wider text-red-400">MISSED</span>
+              {bestActual != null && <span className="text-xs font-bold text-white">{bestActual} {bestPick.statType} actual</span>}
+            </div>
+          ) : isBehind ? (
+            <div className="flex items-center justify-center gap-2 py-2.5 px-4 border-t bg-yellow-500/10 border-yellow-500/20">
+              <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <span className="text-sm font-black tracking-wider text-yellow-400">BEHIND</span>
+              <span className="text-xs font-bold text-white">{bestLive.current} {bestPick.statType} in {bestLive.minutesPlayed} min</span>
+            </div>
+          ) : null}
         </div>
       ); })()}
 
@@ -11037,8 +11109,8 @@ function DailyPicks() {
           <svg className="w-10 h-10 mx-auto mb-3 text-team-secondary opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
           </svg>
-          <h3 className="text-lg font-black text-white mb-1">Unlock All Picks</h3>
-          <p className="text-sm text-gray-400 mb-4 max-w-sm mx-auto">Get full access to tonight's games, edge analysis, parlay builder, and every pick — updated daily.</p>
+          <h3 className="text-lg font-black text-white mb-1">{VAULT.ctaFull}</h3>
+          <p className="text-sm text-gray-400 mb-4 max-w-sm mx-auto">Get every {VAULT.signal.toLowerCase()}, the {VAULT.lock}, injury intelligence, and edge analysis — updated daily.</p>
           <div className="flex flex-col sm:flex-row gap-2 max-w-sm mx-auto">
             <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)}
               placeholder="Enter your email"
@@ -11274,22 +11346,18 @@ function DailyPicks() {
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${oppPace >= LEAGUE_AVG_PACE ? 'bg-green-500/15 text-green-400' : 'bg-white/5 text-gray-500'}`}>{oppPace.toFixed(1)} PACE</span>
                             {g.picks.length > 1 && <span className="text-[10px] text-gray-500 ml-auto">{g.picks.length} picks · +{avgEdge} avg</span>}
                           </div>
-                          {gamePick && (
-                            <div className="rounded-lg p-3 border border-team-secondary/20" style={{ background: 'rgba(var(--team-secondary-rgb),0.05)' }}>
-                              {(() => {
-                                const live = getLiveStatus(gamePick, liveStats);
-                                const resolved = engine.history.find(h => h.player === gamePick.player && h.statType === gamePick.statType && h.result);
-                                const isFinal = gamePick.locked && !live;
-                                return (
-                              <div>
+                          {gamePick && (() => {
+                            const potgResolved = engine.history.find(h => h.player === gamePick.player && h.statType === gamePick.statType && h.result);
+                            const potgLive = getLiveStatus(gamePick, liveStats);
+                            return (
+                            <div className="rounded-lg overflow-hidden border" style={{
+                              background: 'rgba(var(--team-secondary-rgb),0.05)',
+                              borderColor: potgResolved ? (potgResolved.result === 'hit' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)') : potgLive?.status === 'behind' ? 'rgba(234,179,8,0.3)' : 'rgba(var(--team-secondary-rgb),0.2)'
+                            }}>
+                              <div className="p-3">
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <svg className="w-3.5 h-3.5 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                   <span className="text-[10px] font-black text-team-secondary uppercase tracking-wider">Pick of the Game</span>
-                                  {resolved && (
-                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black ml-auto ${resolved.result === 'hit' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-                                      {resolved.result === 'hit' ? 'HIT' : 'MISS'} {resolved.actual != null ? resolved.actual : ''}
-                                    </span>
-                                  )}
                                 </div>
                                 <div className="flex items-center gap-3">
                                   {gamePick.headshot && <img src={gamePick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
@@ -11297,20 +11365,22 @@ function DailyPicks() {
                                     <div className="text-sm font-bold text-white truncate">{gamePick.player}</div>
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-[10px] text-gray-500">{gamePick.teamAbbr} · {gamePick.pos}</span>
-                                      {!resolved && live && (live.status === 'hit' || live.status === 'winning') && (
-                                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold border border-green-500/30 whitespace-nowrap">
-                                          {live.status === 'hit' ? 'HITTING' : 'ON PACE'} {live.current}
+                                      {!potgResolved && potgLive && (potgLive.status === 'hit' || potgLive.status === 'winning') && (
+                                        <span className="inline-flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold border border-green-500/30 whitespace-nowrap">
+                                          <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                          {potgLive.status === 'hit' ? 'HITTING' : 'ON PACE'} {potgLive.current}
                                         </span>
                                       )}
-                                      {!resolved && live?.status === 'behind' && (
-                                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-gray-500 font-medium whitespace-nowrap">
-                                          BEHIND {live.current}
+                                      {!potgResolved && potgLive?.status === 'behind' && (
+                                        <span className="inline-flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-bold border border-yellow-500/30 whitespace-nowrap">
+                                          <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                                          BEHIND {potgLive.current}
                                         </span>
                                       )}
                                     </div>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <div className={`text-sm font-black ${resolved ? (resolved.result === 'hit' ? 'text-green-400' : 'text-red-400') : 'text-team-secondary'}`}><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
+                                    <div className={`text-sm font-black ${potgResolved ? (potgResolved.result === 'hit' ? 'text-green-400' : 'text-red-400') : 'text-team-secondary'}`}><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
                                     <div className="flex items-center gap-1.5 justify-end">
                                       <span className="text-xs text-green-400 font-bold">+{gamePick.edge}</span>
                                       <span className="text-[10px] text-gray-500">{gamePick.confidence}%</span>
@@ -11318,10 +11388,27 @@ function DailyPicks() {
                                   </div>
                                 </div>
                               </div>
-                                );
-                              })()}
+                              {/* Result badge — integrated bottom bar */}
+                              {potgResolved ? (
+                                <div className={`flex items-center justify-center gap-1.5 py-1.5 px-3 border-t text-xs ${potgResolved.result === 'hit' ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                                  <svg className={`w-3 h-3 ${potgResolved.result === 'hit' ? 'text-green-400' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                    {potgResolved.result === 'hit' ? <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />}
+                                  </svg>
+                                  <span className={`font-black ${potgResolved.result === 'hit' ? 'text-green-400' : 'text-red-400'}`}>{potgResolved.result === 'hit' ? 'HIT' : 'MISSED'}</span>
+                                  {potgResolved.actual != null && <span className="font-bold text-white">{potgResolved.actual} {gamePick.statType}</span>}
+                                </div>
+                              ) : potgLive?.status === 'behind' ? (
+                                <div className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-t text-xs bg-yellow-500/10 border-yellow-500/20">
+                                  <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                  </svg>
+                                  <span className="font-black text-yellow-400">BEHIND</span>
+                                  <span className="font-bold text-white">{potgLive.current} {gamePick.statType} in {potgLive.minutesPlayed} min</span>
+                                </div>
+                              ) : null}
                             </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       );
                     })}
@@ -11347,8 +11434,8 @@ function DailyPicks() {
         <select value={sortBy} onChange={e => setSortBy(e.target.value)}
           className="bg-white/[0.04] border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-[11px] text-gray-400 font-bold uppercase tracking-wider cursor-pointer focus:outline-none focus:border-team-secondary appearance-none"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%236b7280'%3E%3Cpath d='M0 0l5 6 5-6z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '24px' }}>
-          <option value="edge">Edge</option>
-          <option value="confidence">Confidence</option>
+          <option value="edge">{VAULT.edge.split(' ')[1]}</option>
+          <option value="confidence">{VAULT.score.split(' ')[1]}</option>
           <option value="line">Line</option>
         </select>
       </div>
@@ -11360,9 +11447,9 @@ function DailyPicks() {
           <div className="col-span-3">Player</div>
           <div className="col-span-1 text-center">Prop</div>
           <div className="col-span-1 text-center">Line</div>
-          <div className="col-span-1 text-center">Proj</div>
-          <div className="col-span-1 text-center">Edge</div>
-          <div className="col-span-1 text-center">Conf</div>
+          <div className="col-span-1 text-center">V.Proj</div>
+          <div className="col-span-1 text-center">V.Edge</div>
+          <div className="col-span-1 text-center">V.Score</div>
           <div className="col-span-4">Insight</div>
         </div>
         {filteredPicks.slice(0, FREE_LIMIT + 5).map((pick, i) => {
@@ -11371,30 +11458,49 @@ function DailyPicks() {
           const isPositive = pick.edge > 0;
           const gameLocked = pick.locked;
           const live = !isPaid ? getLiveStatus(pick, liveStats) : null;
+          const rowResolved = !isPaid ? engine.history.find(h => h.player === pick.player && h.statType === pick.statType && h.result) : null;
+          // Unified status: resolved > live hit > live winning > live behind
+          const rStatus = rowResolved ? rowResolved.result : live?.status === 'hit' ? 'hit' : live?.status === 'winning' ? 'winning' : live?.status === 'behind' ? 'behind' : null;
+          const rActual = rowResolved?.actual ?? live?.current ?? null;
+          const rIsHit = rStatus === 'hit';
+          const rIsMiss = rStatus === 'miss';
+          const rIsWinning = rStatus === 'winning';
+          const rIsBehind = rStatus === 'behind';
           const isExpanded = expandedPick === pick.id && !isPaid;
           const detail = isExpanded ? getPickDetail(pick) : null;
           return (
             <div key={i} style={isPaid ? { filter: `blur(${blurLevel}px)`, userSelect: 'none', pointerEvents: 'none' } : {}}>
-            <div className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${!isPaid ? 'cursor-pointer' : ''} ${isPaid ? '' : gameLocked && !live ? 'opacity-60' : 'hover:bg-team-primary/5'} ${i === 0 && !isPaid ? 'bg-team-secondary/5' : ''} ${isExpanded ? 'bg-team-primary/10' : ''} ${live?.status === 'hit' || live?.status === 'winning' ? 'bg-green-500/[0.04]' : ''} ${live?.status === 'behind' ? 'bg-red-500/[0.02]' : ''}`}
+            <div className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-team-primary/10 items-center transition-colors ${!isPaid ? 'cursor-pointer' : ''} ${isPaid ? '' : gameLocked && !rStatus ? 'opacity-60' : 'hover:bg-team-primary/5'} ${i === 0 && !isPaid ? 'bg-team-secondary/5' : ''} ${isExpanded ? 'bg-team-primary/10' : ''} ${rIsHit || rIsWinning ? 'bg-green-500/[0.04]' : ''} ${rIsMiss ? 'bg-red-500/[0.02]' : ''} ${rIsBehind ? 'bg-yellow-500/[0.02]' : ''}`}
               onClick={() => !isPaid && setExpandedPick(isExpanded ? null : pick.id)}>
               <div className="col-span-3 flex items-center gap-2 min-w-0">
                 {pick.headshot && <img src={pick.headshot} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-white truncate">
                     {pick.player}
-                    {gameLocked && !live && <span className="text-[10px] text-gray-500 ml-1" title="Game started">&#128274;</span>}
+                    {gameLocked && !rStatus && <span className="text-[10px] text-gray-500 ml-1" title="Game started">&#128274;</span>}
                   </div>
                   <div className="flex items-center gap-1">
-                    {live && (live.status === 'hit' || live.status === 'winning') && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold border border-green-500/30 whitespace-nowrap">
-                        {live.status === 'hit' ? 'HITTING' : 'ON PACE'} {live.current} {pick.statType}
+                    {rIsHit ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-black bg-green-500/15 text-green-400 border border-green-500/30 whitespace-nowrap">
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                        HIT{rActual != null ? ` ${rActual}` : ''}
                       </span>
-                    )}
-                    {live?.status === 'behind' && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 text-gray-500 font-medium whitespace-nowrap">
+                    ) : rIsMiss ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-black bg-red-500/15 text-red-400 border border-red-500/30 whitespace-nowrap">
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        MISSED{rActual != null ? ` ${rActual}` : ''}
+                      </span>
+                    ) : rIsWinning ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-green-500/15 text-green-400 border border-green-500/30 whitespace-nowrap">
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                        ON PACE {live.current} {pick.statType}
+                      </span>
+                    ) : rIsBehind ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 whitespace-nowrap">
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                         BEHIND {live.current} {pick.statType}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{(pick.teamAbbr === homeTeam || pick.opponent === homeTeam) ? ' ★' : ''}{pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : pick.gameStatus ? ` · ${pick.gameStatus}` : ''}</div>
                 </div>
@@ -11410,7 +11516,7 @@ function DailyPicks() {
               </div>
               <div className="col-span-4">
                 <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
-                {pick.injury && <span className="text-[9px] text-green-400 font-bold">&#9650; Injury edge</span>}
+                {pick.injury && <span className="text-[9px] text-green-400 font-bold">&#9650; {VAULT.badges.injury}</span>}
               </div>
             </div>
             {/* Expanded: Verified player data only */}
@@ -11456,16 +11562,16 @@ function DailyPicks() {
       {filteredPicks.length > FREE_LIMIT && (
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center z-10" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.85) 30%, rgba(var(--team-midnight-rgb),1) 100%)', height: '80%', pointerEvents: 'none' }}>
           <div className="text-center max-w-sm mx-auto" style={{ pointerEvents: 'auto' }}>
-            <h3 className="text-lg font-black text-white mb-1">Unlock All {filteredPicks.length} Picks</h3>
-            <p className="text-gray-400 text-xs mb-3">Get every edge, every day. Enter your email to join the waitlist.</p>
+            <h3 className="text-lg font-black text-white mb-1">Unlock All {filteredPicks.length} {VAULT.signals}</h3>
+            <p className="text-gray-400 text-xs mb-3">Full access to the {VAULT.engine}. Enter your email to join.</p>
             {emailSubmitted ? (
-              <div className="text-green-400 text-sm font-bold py-2">You're on the list. Paid access launching soon.</div>
+              <div className="text-green-400 text-sm font-bold py-2">You're on the list. Full {VAULT.product} access launching soon.</div>
             ) : (
               <form onSubmit={handleEmailSubmit} className="flex gap-2">
                 <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="Your email" required
                   className="flex-1 bg-gray-900/80 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary" />
                 <button type="submit" className="px-5 py-2.5 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap">
-                  Get Access
+                  {VAULT.cta}
                 </button>
               </form>
             )}
@@ -11474,7 +11580,7 @@ function DailyPicks() {
       )}
       </div>
 
-      {/* Picks Cards — Mobile */}
+      {/* Signal Cards — Mobile */}
       <div className="md:hidden relative mb-8">
       <div className="space-y-3">
         {filteredPicks.slice(0, FREE_LIMIT + 3).map((pick, i) => {
@@ -11483,20 +11589,28 @@ function DailyPicks() {
           const isPositive = pick.edge > 0;
           const gameLocked = pick.locked;
           const live = !isPaid ? getLiveStatus(pick, liveStats) : null;
+          const mRowResolved = !isPaid ? engine.history.find(h => h.player === pick.player && h.statType === pick.statType && h.result) : null;
+          const mStatus = mRowResolved ? mRowResolved.result : live?.status === 'hit' ? 'hit' : live?.status === 'winning' ? 'winning' : live?.status === 'behind' ? 'behind' : null;
+          const mActual = mRowResolved?.actual ?? live?.current ?? null;
+          const mIsHit = mStatus === 'hit';
+          const mIsMiss = mStatus === 'miss';
+          const mIsWinning = mStatus === 'winning';
+          const mIsBehind = mStatus === 'behind';
           const isExpanded = expandedPick === pick.id && !isPaid;
           const detail = isExpanded ? getPickDetail(pick) : null;
           return (
-            <div key={i} className={`glass rounded-xl overflow-hidden ${i === 0 && !isPaid ? 'border border-team-secondary/40' : ''} ${gameLocked && !isPaid && !live ? 'opacity-60' : ''}`}
+            <div key={i} className={`glass rounded-xl overflow-hidden ${i === 0 && !isPaid ? 'border border-team-secondary/40' : ''} ${gameLocked && !isPaid && !mStatus ? 'opacity-60' : ''}`}
               style={{
                 ...(isPaid ? { filter: `blur(${blurLevel}px)`, userSelect: 'none', pointerEvents: 'none' } : {}),
-                ...(live?.status === 'hit' || live?.status === 'winning' ? { borderLeft: '3px solid #22c55e' } : {}),
-                ...(live?.status === 'behind' ? { borderLeft: '3px solid rgba(255,255,255,0.08)' } : {}),
+                ...(mIsHit || mIsWinning ? { borderLeft: '3px solid #22c55e' } : {}),
+                ...(mIsMiss ? { borderLeft: '3px solid #ef4444' } : {}),
+                ...(mIsBehind ? { borderLeft: '3px solid #eab308' } : {}),
               }}>
               <div className={`p-4 ${!isPaid ? 'cursor-pointer' : ''}`} onClick={() => !isPaid && setExpandedPick(isExpanded ? null : pick.id)}>
               <div className="flex items-center gap-3 mb-3">
                 {pick.headshot && <img src={pick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white truncate flex items-center gap-1">{pick.player}{gameLocked && !live && <span className="text-[10px] text-gray-500">&#128274;</span>}</div>
+                  <div className="font-bold text-white truncate flex items-center gap-1">{pick.player}{gameLocked && !mStatus && <span className="text-[10px] text-gray-500">&#128274;</span>}</div>
                   <div className="text-[10px] text-gray-500">{pick.teamAbbr} vs {pick.opponent}{pick.gameTime ? ` · ${formatGameDateTime(pick.gameTime)}` : pick.gameStatus ? ` · ${pick.gameStatus}` : ''}</div>
                 </div>
                 <div className="text-right shrink-0">
@@ -11504,26 +11618,44 @@ function DailyPicks() {
                   <div className={`text-xs font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? '+' : ''}{pick.edge} edge</div>
                 </div>
               </div>
-              {live && (
-                <div className={`flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs ${live.status === 'hit' || live.status === 'winning' ? 'bg-green-500/10' : 'bg-white/[0.03]'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${live.status === 'hit' || live.status === 'winning' ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`} />
-                  <span className={`font-bold ${live.status === 'hit' || live.status === 'winning' ? 'text-green-400' : 'text-gray-500'}`}>
-                    {live.status === 'hit' ? 'HITTING' : live.status === 'winning' ? 'ON PACE' : 'BEHIND'}
-                  </span>
-                  <span className="text-gray-400">{live.current} {pick.statType} in {live.minutesPlayed} min</span>
-                  {live.status !== 'hit' && <span className="text-gray-600 ml-auto">Pace: {live.paceProjection}</span>}
+              {/* Status badge — HIT / MISSED / ON PACE / BEHIND */}
+              {mIsHit ? (
+                <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs border bg-green-500/10 border-green-500/30">
+                  <svg className="w-3.5 h-3.5 shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  <span className="font-black text-green-400">HIT</span>
+                  {mActual != null && <span className="font-bold text-white">{mActual} {pick.statType} actual</span>}
                 </div>
-              )}
+              ) : mIsMiss ? (
+                <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs border bg-red-500/10 border-red-500/30">
+                  <svg className="w-3.5 h-3.5 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  <span className="font-black text-red-400">MISSED</span>
+                  {mActual != null && <span className="font-bold text-white">{mActual} {pick.statType} actual</span>}
+                </div>
+              ) : mIsWinning ? (
+                <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs border bg-green-500/10 border-green-500/30">
+                  <svg className="w-3.5 h-3.5 shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  <span className="font-bold text-green-400">ON PACE</span>
+                  <span className="text-gray-400">{live.current} {pick.statType} in {live.minutesPlayed} min</span>
+                  <span className="text-gray-600 ml-auto">Pace: {live.paceProjection}</span>
+                </div>
+              ) : mIsBehind ? (
+                <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-xs border bg-yellow-500/10 border-yellow-500/30">
+                  <svg className="w-3.5 h-3.5 shrink-0 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                  <span className="font-bold text-yellow-400">BEHIND</span>
+                  <span className="text-gray-400">{live.current} {pick.statType} in {live.minutesPlayed} min</span>
+                  <span className="text-gray-600 ml-auto">Pace: {live.paceProjection}</span>
+                </div>
+              ) : null}
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-500">Proj</span>
+                  <span className="text-gray-500">V.Proj</span>
                   <span className="text-white font-bold">{pick.projection}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-500">Conf</span>
+                  <span className="text-gray-500">V.Score</span>
                   <span className={`font-bold ${pick.confidence >= 70 ? 'text-green-400' : pick.confidence >= 50 ? 'text-team-secondary' : 'text-red-400'}`}>{pick.confidence}%</span>
                 </div>
-                {pick.injury && <span className="text-[10px] text-green-400 font-bold">&#9650; Injury edge</span>}
+                {pick.injury && <span className="text-[10px] text-green-400 font-bold">&#9650; {VAULT.badges.injury}</span>}
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{pick.explanation}</p>
               </div>
@@ -11569,8 +11701,8 @@ function DailyPicks() {
       {filteredPicks.length > FREE_LIMIT && (
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center z-10 px-4" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.85) 30%, rgba(var(--team-midnight-rgb),1) 100%)', height: '85%', pointerEvents: 'none' }}>
           <div className="text-center w-full max-w-sm" style={{ pointerEvents: 'auto' }}>
-            <h3 className="text-base font-black text-white mb-1">Unlock All {filteredPicks.length} Picks</h3>
-            <p className="text-gray-400 text-xs mb-3">Join the waitlist for full access.</p>
+            <h3 className="text-base font-black text-white mb-1">Unlock All {filteredPicks.length} {VAULT.signals}</h3>
+            <p className="text-gray-400 text-xs mb-3">Full {VAULT.engine} access.</p>
             {emailSubmitted ? (
               <div className="text-green-400 text-sm font-bold py-2">You're on the list.</div>
             ) : (
@@ -11578,7 +11710,7 @@ function DailyPicks() {
                 <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="Your email" required
                   className="flex-1 bg-gray-900/80 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary min-w-0" />
                 <button type="submit" className="px-4 py-2.5 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap shrink-0">
-                  Get Access
+                  {VAULT.cta}
                 </button>
               </form>
             )}
@@ -11606,10 +11738,10 @@ function DailyPicks() {
                 <circle cx="26" cy="24" r="7" stroke="var(--team-secondary)" strokeWidth="1.5" fill="none" opacity="0.5" />
                 <circle cx="26" cy="24" r="3" stroke="var(--team-secondary)" strokeWidth="1" fill="none" opacity="0.4" />
               </svg>
-              <span className="text-sm font-black text-team-secondary uppercase tracking-wider">Daily Picks</span>
+              <span className="text-sm font-black text-team-secondary uppercase tracking-wider">{VAULT.signals}</span>
             </div>
-            <h3 className="text-lg md:text-xl font-black text-white">Get today's best edges in your inbox</h3>
-            <p className="text-gray-400 text-xs mt-1">Top 3 picks, injury alerts, and edge analysis — every morning before tip-off.</p>
+            <h3 className="text-lg md:text-xl font-black text-white">Get today's best {VAULT.signals.toLowerCase()} in your inbox</h3>
+            <p className="text-gray-400 text-xs mt-1">Top signals, injury intelligence, and edge analysis — every morning before tip-off.</p>
           </div>
           <div className="md:w-80 shrink-0">
             {emailSubmitted ? (
@@ -11672,8 +11804,8 @@ function DailyPicks() {
             {/* Track Record header with stats */}
             <div className="flex items-end justify-between mb-4">
               <div>
-                <h3 className="text-xl font-black text-white">Track <span className="text-team-secondary">Record</span></h3>
-                <p className="text-[10px] text-gray-500 mt-0.5">Every pick. Every outcome. Full transparency.</p>
+                <h3 className="text-xl font-black text-white">Vault <span className="text-team-secondary">Performance</span></h3>
+                <p className="text-[10px] text-gray-500 mt-0.5">Every signal. Every outcome. Full transparency.</p>
               </div>
               {resolved.length > 0 && (
                 <div className="flex items-center gap-4">
@@ -11752,7 +11884,7 @@ function DailyPicks() {
         {oddsSource === 'live' ? (
           <span className="flex items-center gap-1 text-[9px] text-green-400 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20"><span className="w-1 h-1 rounded-full bg-green-500" />Lines from DraftKings / FanDuel</span>
         ) : (
-          <span className="text-[9px] text-gray-600">Model-projected lines</span>
+          <span className="text-[9px] text-gray-600">{VAULT.engine}-projected lines</span>
         )}
       </div>
     </section>
@@ -11769,9 +11901,9 @@ function WikiPage() {
 
       <div className="space-y-6">
         <div className="glass rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-team-secondary mb-4">About This Hub</h3>
+          <h3 className="text-lg font-bold text-team-secondary mb-4">About NBA Vault</h3>
           <p className="text-gray-300 text-sm leading-relaxed mb-3">
-            NBA Vault is an all-in-one fan-built dashboard covering roster breakdowns, draft analysis, trade simulators, lineup builders, and community polls for all 30 NBA teams. Built as a single-page React application that runs entirely in the browser with no backend server required.
+            NBA Vault is an all-in-one fan-built platform featuring the Vault Engine (a self-calibrating NBA betting edge intelligence system), roster breakdowns, draft analysis, trade simulators, lineup builders, and community polls for all 30 NBA teams. Built as a single-page React application that runs entirely in the browser with no backend server required.
           </p>
           <p className="text-gray-300 text-sm leading-relaxed">
             Every team gets its own themed experience with dynamically swappable colors, data, and content. All 30 teams have complete rosters with real player names, positions, jersey numbers, stats, official NBA.com headshot images, scouting reports, player comparisons, and contextual badges. Each team also has 25 draft prospects with team-specific fit analysis and 25 custom fan poll questions.
@@ -11790,9 +11922,9 @@ function WikiPage() {
               { name: 'localStorage', desc: 'Client-side persistence for team preference, poll votes, fan map data, and session state' },
               { name: 'Geolocation API', desc: 'Browser native API for the Fan Map feature — plots visitor locations on an SVG map' },
               { name: 'Claude API (Anthropic)', desc: 'Powers the AI Trade Analyst — provides letter grades, pros/cons, and GM approval ratings (requires user-provided API key)', url: 'https://docs.anthropic.com' },
-              { name: 'The Odds API', desc: 'Real-time player prop lines from DraftKings and FanDuel — cached locally to minimize API usage', url: 'https://the-odds-api.com' },
-              { name: 'NBA CDN Scoreboard', desc: 'Live game schedule, scores, and box scores via the NBA\'s public CDN endpoint' },
-              { name: 'EmailJS', desc: 'Client-side email delivery for welcome emails with Pick of the Day data', url: 'https://emailjs.com' },
+              { name: 'The Odds API', desc: 'Real-time player prop lines from DraftKings and FanDuel — powers Vault Signal line data, cached locally', url: 'https://the-odds-api.com' },
+              { name: 'NBA CDN Scoreboard', desc: 'Live game schedule, scores, and box scores — used by the Vault Engine for auto-resolve and live status' },
+              { name: 'EmailJS', desc: 'Client-side email delivery for welcome emails with Vault Lock of the Day data', url: 'https://emailjs.com' },
               { name: 'Jest + Babel Parser', desc: '114-test suite covering structure, theming, data integrity, JSX syntax validation, security, and regression — runs automatically via pre-commit hook' },
             ].map((t, i) => (
               <div key={i} className="rounded-xl p-4 border border-team-primary/20" style={{ background: 'rgba(var(--team-primary-rgb),0.06)' }}>
@@ -11833,7 +11965,7 @@ function WikiPage() {
             <p><span className="text-team-secondary font-semibold">Single File:</span> The entire application lives in one <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">index.html</code> file (~730KB). No build step, no bundler, no server — hosted for free on GitHub Pages.</p>
             <p><span className="text-team-secondary font-semibold">30-Team Theming:</span> A <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">TEAM_CONFIGS</code> object holds metadata for all 30 NBA teams. CSS custom properties enable instant color swaps via <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">applyTeamColors()</code>.</p>
             <p><span className="text-team-secondary font-semibold">Context-Driven:</span> A React Context (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">TeamContext</code>) propagates the active team config, data, and switch function to all child components.</p>
-            <p><span className="text-team-secondary font-semibold">URL Routing:</span> Clean URL routing (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/roster</code>, <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/draft</code>, etc.) with History API enables shareable deep links to each section.</p>
+            <p><span className="text-team-secondary font-semibold">URL Routing:</span> Clean URL routing (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/roster</code>, <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/vault</code>, <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">/draft</code>, etc.) with History API enables shareable deep links to each section.</p>
             <p><span className="text-team-secondary font-semibold">Full 30-Team Data:</span> All 30 teams have real rosters (12 players each, 360 total) with names, stats, headshots, scout reports, strengths/weaknesses, player comparisons, ceiling projections, and monthly trends. Each team has 25 custom poll questions. Draft prospects use shared data with per-team fit scoring.</p>
             <p><span className="text-team-secondary font-semibold">Performance:</span> Lazy-loaded images, memoized components (<code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">React.memo</code>), GPU-accelerated animations with <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded">will-change</code>, preconnect hints, and optimized font loading.</p>
             <p><span className="text-team-secondary font-semibold">Betting Engine:</span> 7-factor projection model (matchup, pace, form, home/away, injury, minutes, edge decay) with Bayesian self-calibration. Real sportsbook lines from The Odds API with 30-min caching. Auto-resolves picks from final NBA box scores.</p>
@@ -11846,12 +11978,12 @@ function WikiPage() {
           <h3 className="text-lg font-bold text-team-secondary mb-4">Features Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { feature: 'Daily Picks', desc: '7-factor betting engine with real sportsbook lines (DraftKings/FanDuel), edge calculations, confidence scores, pace analysis, injury exploits, and auto-resolving pick tracker' },
+              { feature: 'Vault Signals', desc: '7-factor Vault Engine with real sportsbook lines (DraftKings/FanDuel), Vault Edge calculations, Vault Scores, pace analysis, injury intelligence, and auto-resolving signal tracker' },
               { feature: 'Roster', desc: 'Player cards with headshots, stats vs. league average, radar charts, scout reports, contextual badges, lineup builder, and trade machine' },
               { feature: 'Draft', desc: 'Big board with 25 ranked prospects, team-specific fit scores, dynamic positional needs, mock draft simulator with lottery odds' },
               { feature: 'Fan Poll', desc: '25 team-specific questions across 5 categories with vote tracking, Community Voice dashboard, consensus analysis, and embedded Fan Map' },
               { feature: 'Landing Page', desc: 'Conversion-optimized sales page at /nba-betting-edges for paid traffic campaigns — hero, social proof, sample picks, pricing' },
-              { feature: 'Email Capture', desc: 'Waitlist signup with EmailJS-powered welcome emails containing today\'s Pick of the Day' },
+              { feature: 'Email Capture', desc: 'Waitlist signup with EmailJS-powered welcome emails containing today\'s Vault Lock of the Day' },
             ].map((f, i) => (
               <div key={i} className="rounded-lg p-3 border border-team-primary/15" style={{ background: 'rgba(var(--team-primary-rgb),0.04)' }}>
                 <span className="text-sm font-bold text-team-secondary">{f.feature}</span>
@@ -11884,13 +12016,11 @@ function LandingPage() {
     }
   };
 
-  // Pull from real win tracker
-  const tracker = loadWinTracker();
+  // Pull from real engine data
   const engine_ = loadVaultEngine();
   const totalTracked = engine_.history.filter(h => h.result).length;
   const totalHits = engine_.history.filter(h => h.result === 'hit').length;
   const winRate = totalTracked > 0 ? Math.round((totalHits / totalTracked) * 100) : 62;
-  // Last 7 days results
   const last7 = engine_.history.filter(h => {
     if (!h.result || !h.date) return false;
     const d = new Date(h.date); const now = new Date();
@@ -11907,12 +12037,13 @@ function LandingPage() {
   const yHits = yesterdayPicks.filter(h => h.result === 'hit').length;
   const yTotal = yesterdayPicks.length;
   const stats = {
-    yesterday: yTotal > 0 ? `${yHits}-${yTotal - yHits}` : '—',
+    yesterday: yTotal > 0 ? `${yHits}/${yTotal}` : '—',
+    yesterdayHits: yHits,
     weekUnits: last7Total > 0 ? `${weekUnits}u` : '—',
     winRate: totalTracked > 0 ? `${winRate}%` : '—',
   };
 
-  // Sample picks from today's engine
+  // Sample Vault Signals from today's engine
   const samplePicks = useMemo(() => {
     const allTeamAbbrs = Object.keys(TEAM_CONFIGS);
     const today = new Date();
@@ -11930,26 +12061,25 @@ function LandingPage() {
         const line = Math.round((proj - rng(p.name.length * 3) * 2 - 0.5) * 2) / 2;
         const edge = +(proj - line).toFixed(1);
         if (edge > 0.5) {
-          picks.push({ player: p.name, headshot: p.headshot, teamAbbr: abbr, statType: 'PTS', line, projection: proj, edge, confidence: Math.min(Math.round(50 + edge * 5 + rng(p.name.length * 7) * 20), 95), explanation: `Projects at ${proj} PTS — ${edge.toFixed(1)} above the line.` });
+          const injuryBoost = rng(p.name.length * 11) > 0.7;
+          const tempoEdge = rng(p.name.length * 13) > 0.75;
+          const mismatch = rng(p.name.length * 17) > 0.8;
+          picks.push({ player: p.name, headshot: p.headshot, teamAbbr: abbr, statType: 'PTS', line, projection: proj, edge, confidence: Math.min(Math.round(50 + edge * 5 + rng(p.name.length * 7) * 20), 95), explanation: `${VAULT.engine} projects ${proj} PTS — ${edge.toFixed(1)} above the posted line.`, injuryBoost, tempoEdge, mismatch });
         }
       });
     });
-    return picks.sort((a, b) => b.edge - a.edge).slice(0, 8);
+    return picks.sort((a, b) => b.confidence - a.confidence).slice(0, 8);
   }, []);
 
   const bestPick = samplePicks[0];
 
   const faqs = [
-    { q: 'Are these bets guaranteed to win?', a: 'No bet is ever guaranteed. Our model identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual bets can and will lose.' },
-    { q: 'How often do picks win?', a: 'Our model targets a 55-65% hit rate on player props. The Best Bet of the Day has a higher bar — we only surface the single highest-confidence play each day.' },
-    { q: 'What sportsbooks does this work with?', a: 'Our picks work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
-    { q: 'How does the Draft Simulator work?', a: 'The SIM tab runs a full interactive 2026 NBA Draft experience. The lottery determines draft order using real odds from Tankathon. AI teams pick based on positional needs and roster analysis. You make the pick for your team with full scouting reports, pro comparisons, and projected lineup impact. You can continue through all 30 first-round picks.' },
-    { q: 'How does the Trade Center work?', a: 'The TRADE tab lets you build trades between any two teams, with a live fairness meter, player valuations, and AI-generated trade suggestions based on your team\'s needs. After executing a trade, both teams receive report cards with stat impact analysis and need-fit evaluation.' },
-    { q: 'How are picks generated?', a: 'Our projection model factors in matchup quality (opponent defensive rating), recent form, home/away splits, injury impact, and minutes consistency. The engine self-calibrates based on tracked results.' },
-    { q: 'Can I cancel anytime?', a: 'Yes. No contracts, no commitments. Cancel your $19/month subscription at any time with one click.' },
+    { q: `Is ${VAULT.product} guaranteed to win?`, a: 'No bet is ever guaranteed. The Vault Engine identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual signals can and will lose.' },
+    { q: `How often are ${VAULT.signals.toLowerCase()} updated?`, a: `${VAULT.signals} are generated fresh every day before tip-off. The ${VAULT.engine} scans all available games, compares projections to live sportsbook lines, and surfaces the highest-edge opportunities. Signals lock in once generated for consistency.` },
+    { q: 'What sportsbooks is this based on?', a: `The ${VAULT.engine} pulls live lines from DraftKings and FanDuel via The Odds API. Signals work with any sportsbook that offers NBA player props — BetMGM, Caesars, and more. Lines may vary slightly between books.` },
   ];
 
-  const goToPicks = () => { history.pushState(null, '', '/picks'); window.location.reload(); };
+  const goToVault = () => { history.pushState(null, '', '/vault'); window.location.reload(); };
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--team-midnight)' }}>
@@ -11957,20 +12087,27 @@ function LandingPage() {
       {/* HERO */}
       <section className="relative overflow-hidden py-20 md:py-32 px-4">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--team-secondary) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        {/* Subtle vault glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, var(--team-secondary), transparent 70%)' }} />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <p className="text-team-secondary text-sm font-bold uppercase tracking-widest mb-4">NBA Vault</p>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-team-secondary/30 bg-team-secondary/10 mb-6">
+            <svg className="w-4 h-4 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+            <span className="text-team-secondary text-xs font-bold uppercase tracking-widest">{VAULT.engine}</span>
+          </div>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] mb-6">
-            Find the Best NBA Bets<br /><span className="text-team-secondary">in 60 Seconds</span>
+            {VAULT.heroHeadline.split('Vault').map((part, i, arr) => i < arr.length - 1 ? (
+              <span key={i}>{part}<span className="text-team-secondary">Vault</span></span>
+            ) : <span key={i}>{part}</span>)}
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-8">
-            Our model scans player trends, injuries, and matchups to find mispriced betting lines every day.
+            {VAULT.heroSub}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button onClick={goToPicks} className="px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
-              Unlock Today's Picks
+            <button onClick={goToVault} className="px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
+              {VAULT.cta}
             </button>
-            <button onClick={goToPicks} className="px-8 py-4 rounded-xl glass text-white font-semibold text-base hover:bg-white/10 transition-all">
-              See Free Picks
+            <button onClick={goToVault} className="px-8 py-4 rounded-xl glass text-white font-semibold text-base hover:bg-white/10 transition-all">
+              {VAULT.ctaSignals}
             </button>
           </div>
         </div>
@@ -11980,34 +12117,33 @@ function LandingPage() {
       <section className="border-y border-team-primary/20 py-5" style={{ background: 'rgba(var(--team-deep-rgb),0.8)' }}>
         <div className="max-w-3xl mx-auto flex items-center justify-center gap-8 md:gap-16 flex-wrap px-4">
           <div className="text-center">
+            <div className="text-2xl font-black text-white">{stats.winRate}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Vault Accuracy</div>
+          </div>
+          <div className="text-center">
             <div className="text-2xl font-black text-green-400">{stats.yesterday}</div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Yesterday</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Yesterday's Signals Hit</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-black text-team-secondary">{stats.weekUnits}</div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Last 7 Days</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-black text-white">{stats.winRate}</div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Win Rate</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Net Units (7d)</div>
           </div>
         </div>
       </section>
 
-      {/* WHY THIS WORKS */}
+      {/* WHAT IS THE VAULT */}
       <section className="py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
-            How We Find <span className="text-team-secondary">Edges</span>
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-4">
+            What is <span className="text-team-secondary">{VAULT.product}</span>?
           </h2>
+          <p className="text-gray-400 text-center max-w-2xl mx-auto mb-12 text-base leading-relaxed">{VAULT.whatIs}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { title: 'Injury Exploits', desc: 'When key players sit, betting lines don\'t adjust fast enough. We catch the gap before books react.', icon: '&#9888;' },
-              { title: 'Player Trends', desc: 'We track hot streaks, matchup advantages, and home/away splits to find consistent over plays.', icon: '&#9650;' },
-              { title: 'Market Inefficiencies', desc: 'Sportsbooks are slow to move lines. Our model finds where projections exceed the posted number.', icon: '&#9733;' },
-            ].map((c, i) => (
-              <div key={i} className="glass rounded-2xl p-6 text-center">
-                <div className="text-2xl text-team-secondary mb-3" dangerouslySetInnerHTML={{ __html: c.icon }} />
+            {VAULT.pillars.map((c, i) => (
+              <div key={i} className="glass rounded-2xl p-6 text-center border border-white/[0.04] hover:border-team-secondary/20 transition-colors">
+                <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center text-xl" style={{ background: 'rgba(var(--team-secondary-rgb),0.12)' }}>
+                  <span className="text-team-secondary" dangerouslySetInnerHTML={{ __html: c.icon }} />
+                </div>
                 <h3 className="text-lg font-bold text-white mb-2">{c.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{c.desc}</p>
               </div>
@@ -12016,42 +12152,51 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* SAMPLE PICKS */}
+      {/* VAULT SIGNAL PREVIEW */}
       <section className="py-16 px-4" style={{ background: 'rgba(var(--team-deep-rgb),0.5)' }}>
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-center mb-2">Today's <span className="text-team-secondary">Picks</span></h2>
+          <h2 className="text-3xl font-black text-center mb-2">Today's <span className="text-team-secondary">{VAULT.signals}</span></h2>
           <p className="text-gray-500 text-sm text-center mb-8">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           <div className="relative">
             <div className="space-y-2">
               {samplePicks.map((pick, i) => (
-                <div key={i} className={`glass rounded-xl p-4 flex items-center gap-3 ${i >= 3 ? '' : ''}`}
+                <div key={i} className={`glass rounded-xl p-4 flex items-center gap-3`}
                   style={i >= 3 ? { filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' } : {}}>
                   {pick.headshot && <img src={pick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-white text-sm truncate">{pick.player}</div>
-                    <div className="text-[10px] text-gray-500">{pick.teamAbbr}</div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[10px] text-gray-500">{pick.teamAbbr}</span>
+                      {i < 3 && pick.injuryBoost && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold border border-green-500/20">{VAULT.badges.injury}</span>}
+                      {i < 3 && pick.tempoEdge && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-bold border border-blue-500/20">{VAULT.badges.tempo}</span>}
+                      {i < 3 && pick.mismatch && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-bold border border-purple-500/20">{VAULT.badges.mismatch}</span>}
+                    </div>
                   </div>
                   <div className="text-center px-2">
                     <div className="text-team-secondary font-black text-sm"><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{pick.line} {pick.statType}</div>
                   </div>
                   <div className="text-center px-2">
                     <div className="text-white font-bold text-sm">{pick.projection}</div>
-                    <div className="text-[10px] text-gray-500">proj</div>
+                    <div className="text-[9px] text-gray-600">V.Proj</div>
                   </div>
                   <div className="text-center px-2">
                     <span className="text-green-400 font-black text-sm">+{pick.edge}</span>
+                    <div className="text-[9px] text-gray-600">V.Edge</div>
                   </div>
                   <div className="hidden md:block text-center px-2">
-                    <span className={`text-xs font-bold ${pick.confidence >= 70 ? 'text-green-400' : 'text-team-secondary'}`}>{pick.confidence}%</span>
+                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full text-[10px] font-black" style={{
+                      background: `conic-gradient(${pick.confidence >= 70 ? '#22c55e' : 'var(--team-secondary)'} ${pick.confidence}%, transparent 0)`, color: 'white'
+                    }}>{pick.confidence}</div>
+                    <div className="text-[9px] text-gray-600">V.Score</div>
                   </div>
                 </div>
               ))}
             </div>
-            {/* Overlay CTA on blurred picks */}
+            {/* Overlay CTA on blurred signals */}
             <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pb-8 z-10" style={{ background: 'linear-gradient(transparent 0%, rgba(var(--team-midnight-rgb),0.95) 50%)', height: '65%', pointerEvents: 'none' }}>
               <div className="text-center" style={{ pointerEvents: 'auto' }}>
-                <button onClick={goToPicks} className="px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
-                  Unlock All {samplePicks.length} Picks
+                <button onClick={goToVault} className="px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
+                  {VAULT.ctaFull}
                 </button>
               </div>
             </div>
@@ -12059,24 +12204,34 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* BEST BET OF THE DAY */}
+      {/* VAULT LOCK OF THE DAY */}
       {bestPick && (
       <section className="py-16 px-4">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-black text-center mb-8">Pick of the <span className="text-team-secondary">Day</span></h2>
-          <div className="glass rounded-2xl p-6 md:p-8 border border-team-secondary/30" style={{ boxShadow: '0 0 40px rgba(var(--team-secondary-rgb),0.15)' }}>
+          <h2 className="text-3xl font-black text-center mb-8">{VAULT.lock} of the <span className="text-team-secondary">Day</span></h2>
+          <div className="rounded-2xl p-6 md:p-8 relative overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(var(--team-secondary-rgb),0.12) 0%, rgba(var(--team-primary-rgb),0.2) 40%, rgba(var(--team-midnight-rgb),0.95) 100%)',
+            border: '2px solid var(--team-secondary)',
+            boxShadow: '0 0 40px rgba(var(--team-secondary-rgb),0.2), 0 0 80px rgba(var(--team-secondary-rgb),0.08)'
+          }}>
+            <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, transparent, var(--team-secondary), transparent)', animation: 'shimmer 3s infinite' }} />
             <div className="flex items-center gap-4 md:gap-6">
               {bestPick.headshot && (
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden shrink-0" style={{ border: '3px solid var(--team-secondary)' }}>
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden shrink-0" style={{ border: '3px solid var(--team-secondary)' }}>
+                  <div className="absolute inset-0 rounded-full" style={{ boxShadow: 'inset 0 0 20px rgba(var(--team-secondary-rgb),0.3)' }} />
                   <img src={bestPick.headshot} alt="" className="w-full h-full object-cover object-top" loading="lazy" />
                 </div>
               )}
               <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-3.5 h-3.5 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-team-secondary">{VAULT.lockFull}</span>
+                </div>
                 <div className="font-black text-xl text-white">{bestPick.player}</div>
                 <div className="text-team-secondary font-black text-2xl mt-1"><span className="text-xs font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-team-secondary/20 mr-1.5 align-middle">OVR</span>{bestPick.line} {bestPick.statType}</div>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <span className="px-3 py-1 rounded-lg bg-green-500/20 text-green-400 text-sm font-black border border-green-500/30">+{bestPick.edge} edge</span>
-                  <span className="px-3 py-1 rounded-lg text-sm font-black border" style={{ background: 'rgba(var(--team-secondary-rgb),0.15)', borderColor: 'rgba(var(--team-secondary-rgb),0.3)', color: 'var(--team-secondary)' }}>{bestPick.confidence}% confidence</span>
+                  <span className="px-3 py-1 rounded-lg text-sm font-black border" style={{ background: 'rgba(var(--team-secondary-rgb),0.15)', borderColor: 'rgba(var(--team-secondary-rgb),0.3)', color: 'var(--team-secondary)' }}>{bestPick.confidence}% score</span>
                 </div>
                 <p className="text-sm text-gray-400 mt-3">{bestPick.explanation}</p>
               </div>
@@ -12086,30 +12241,39 @@ function LandingPage() {
       </section>
       )}
 
-      {/* RESULTS TRACKING */}
+      {/* VAULT PERFORMANCE */}
       <section className="py-16 px-4" style={{ background: 'rgba(var(--team-deep-rgb),0.5)' }}>
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-black text-center mb-8">Tracked <span className="text-team-secondary">Results</span></h2>
-          <div className="glass rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-team-primary/20 text-[10px] text-gray-500 uppercase tracking-wider font-bold">
-              <div>Date</div><div className="text-center">Record</div><div className="text-right">ROI</div>
-            </div>
-            {[
-              { date: 'Today', record: '—', roi: 'In progress' },
-              { date: 'Yesterday', record: '7-3', roi: '+3.2u' },
-              { date: '2 days ago', record: '5-4', roi: '+0.8u' },
-              { date: '3 days ago', record: '8-2', roi: '+5.6u' },
-              { date: '4 days ago', record: '6-4', roi: '+1.4u' },
-              { date: '5 days ago', record: '4-5', roi: '-1.2u' },
-              { date: '6 days ago', record: '7-3', roi: '+3.8u' },
-            ].map((d, i) => (
-              <div key={i} className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-team-primary/10 text-sm">
-                <div className="text-gray-400">{d.date}</div>
-                <div className="text-center text-white font-bold">{d.record}</div>
-                <div className={`text-right font-bold ${d.roi.startsWith('+') ? 'text-green-400' : d.roi.startsWith('-') ? 'text-red-400' : 'text-gray-500'}`}>{d.roi}</div>
+          <h2 className="text-3xl font-black text-center mb-8">Vault <span className="text-team-secondary">Performance</span></h2>
+          {(() => {
+            // Build real 7-day performance from engine history
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+              const d = new Date(); d.setDate(d.getDate() - i);
+              const dKey = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+              const dayPicks = engine_.history.filter(h => h.date === dKey && h.result);
+              const dayHits = dayPicks.filter(h => h.result === 'hit').length;
+              const dayTotal = dayPicks.length;
+              const label = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : `${i} days ago`;
+              const record = dayTotal > 0 ? `${dayHits}-${dayTotal - dayHits}` : '—';
+              const roi = dayTotal > 0 ? `${(dayHits * 1.0 - (dayTotal - dayHits) * 1.1) >= 0 ? '+' : ''}${(dayHits * 1.0 - (dayTotal - dayHits) * 1.1).toFixed(1)}u` : (i === 0 ? 'In progress' : '—');
+              days.push({ date: label, record, roi });
+            }
+            return (
+              <div className="glass rounded-2xl overflow-hidden">
+                <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-team-primary/20 text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                  <div>Date</div><div className="text-center">Record</div><div className="text-right">ROI</div>
+                </div>
+                {days.map((d, i) => (
+                  <div key={i} className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-team-primary/10 text-sm">
+                    <div className="text-gray-400">{d.date}</div>
+                    <div className="text-center text-white font-bold">{d.record}</div>
+                    <div className={`text-right font-bold ${d.roi.startsWith('+') ? 'text-green-400' : d.roi.startsWith('-') ? 'text-red-400' : 'text-gray-500'}`}>{d.roi}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -12118,12 +12282,12 @@ function LandingPage() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="glass rounded-2xl p-8 md:p-12">
             <p className="text-lg md:text-xl text-gray-300 leading-relaxed italic">
-              "Thousands of bettors use NBA Vault to find edges in minutes instead of hours."
+              "The {VAULT.engine} finds edges in minutes that would take hours of manual research."
             </p>
             <div className="mt-6 flex justify-center gap-6 flex-wrap">
-              <div className="text-center"><div className="text-2xl font-black text-team-secondary">10K+</div><div className="text-[10px] text-gray-500 uppercase">Monthly visitors</div></div>
-              <div className="text-center"><div className="text-2xl font-black text-team-secondary">30</div><div className="text-[10px] text-gray-500 uppercase">Teams covered</div></div>
-              <div className="text-center"><div className="text-2xl font-black text-team-secondary">Daily</div><div className="text-[10px] text-gray-500 uppercase">Updated picks</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-team-secondary">30</div><div className="text-[10px] text-gray-500 uppercase">Teams Analyzed</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-team-secondary">7</div><div className="text-[10px] text-gray-500 uppercase">Signal Factors</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-team-secondary">Daily</div><div className="text-[10px] text-gray-500 uppercase">Self-Calibrating</div></div>
             </div>
           </div>
         </div>
@@ -12132,19 +12296,17 @@ function LandingPage() {
       {/* PRICING */}
       <section className="py-16 px-4" style={{ background: 'rgba(var(--team-deep-rgb),0.5)' }}>
         <div className="max-w-lg mx-auto text-center">
-          <h2 className="text-3xl font-black mb-2">Unlock Every <span className="text-team-secondary">Edge</span></h2>
-          <p className="text-gray-500 text-sm mb-8">One subscription. Every pick. Every insight.</p>
-          <div className="glass rounded-2xl p-8 border border-team-secondary/30">
+          <h2 className="text-3xl font-black mb-2">{VAULT.ctaFull.split(' ').map((w, i) => w === 'Vault' ? <span key={i} className="text-team-secondary">{w} </span> : w + ' ')}</h2>
+          <p className="text-gray-500 text-sm mb-8">One subscription. Every signal. Every edge.</p>
+          <div className="glass rounded-2xl p-8 border border-team-secondary/30" style={{ boxShadow: '0 0 30px rgba(var(--team-secondary-rgb),0.1)' }}>
             <div className="text-5xl font-black text-white mb-1">$19<span className="text-lg text-gray-500 font-normal">/month</span></div>
             <ul className="text-sm text-gray-300 space-y-3 mt-6 text-left max-w-xs mx-auto">
-              <li className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> Full daily picks board (all games)</li>
-              <li className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> Pick of the Day with confidence scores</li>
-              <li className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> Injury exploit alerts</li>
-              <li className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> Matchup & trend analysis</li>
-              <li className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> Self-improving projection model</li>
+              {VAULT.priceFeatures.map((f, i) => (
+                <li key={i} className="flex items-center gap-2"><span className="text-green-400">&#10003;</span> {f}</li>
+              ))}
             </ul>
-            <button className="w-full mt-8 px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
-              Start Winning Today
+            <button onClick={goToVault} className="w-full mt-8 px-8 py-4 rounded-xl bg-team-secondary text-black font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
+              {VAULT.cta}
             </button>
             <p className="text-gray-600 text-xs mt-3">Cancel anytime &bull; 7-day free trial</p>
           </div>
@@ -12154,16 +12316,16 @@ function LandingPage() {
       {/* URGENCY */}
       <section className="py-10 px-4 border-y border-team-primary/20" style={{ background: 'rgba(var(--team-secondary-rgb),0.05)' }}>
         <div className="max-w-3xl mx-auto flex items-center justify-center gap-6 flex-wrap text-center">
-          <div className="flex items-center gap-2 text-sm text-gray-300"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Updated daily before tip-off</div>
-          <div className="flex items-center gap-2 text-sm text-gray-300"><span className="text-team-secondary">&#9889;</span> Lines move fast — get in early</div>
+          <div className="flex items-center gap-2 text-sm text-gray-300"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> {VAULT.urgency.split('.')[0]}.</div>
+          <div className="flex items-center gap-2 text-sm text-gray-300"><span className="text-team-secondary">&#9889;</span> {VAULT.urgency.split('.')[1].trim()}.</div>
         </div>
       </section>
 
       {/* EMAIL CAPTURE */}
       <section className="py-16 px-4">
         <div className="max-w-lg mx-auto text-center">
-          <h2 className="text-2xl font-black mb-2 text-white">Get Free Picks in Your Inbox</h2>
-          <p className="text-gray-400 text-sm mb-6">Daily email with our top 3 picks + injury alerts. No spam.</p>
+          <h2 className="text-2xl font-black mb-2 text-white">Get Free {VAULT.signals} in Your Inbox</h2>
+          <p className="text-gray-400 text-sm mb-6">Daily email with top signals + injury intelligence. No spam.</p>
           {emailDone ? (
             <div className="text-green-400 font-bold text-sm py-2">You're in. Check your inbox tomorrow morning.</div>
           ) : (
@@ -12171,7 +12333,7 @@ function LandingPage() {
               <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="Enter your email" required
                 className="flex-1 bg-gray-900/50 border border-team-primary rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-team-secondary" />
               <button type="submit" className="px-6 py-3 rounded-lg bg-team-secondary text-black font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap">
-                Send Picks
+                Send Signals
               </button>
             </form>
           )}
@@ -12198,12 +12360,12 @@ function LandingPage() {
 
       {/* FINAL CTA */}
       <section className="py-20 px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-black mb-4 text-white">Stop Guessing. Start <span className="text-team-secondary">Winning.</span></h2>
-        <p className="text-gray-400 mb-8 max-w-md mx-auto">Join thousands of bettors who use NBA Vault to find profitable edges every single day.</p>
-        <button onClick={goToPicks} className="px-10 py-4 rounded-xl bg-team-secondary text-black font-bold text-lg hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
-          Unlock Today's Picks
+        <h2 className="text-3xl md:text-4xl font-black mb-4 text-white">Stop Guessing. <span className="text-team-secondary">{VAULT.cta}.</span></h2>
+        <p className="text-gray-400 mb-8 max-w-md mx-auto">The {VAULT.engine} detects mispriced lines so you don't have to. Join the edge.</p>
+        <button onClick={goToVault} className="px-10 py-4 rounded-xl bg-team-secondary text-black font-bold text-lg hover:opacity-90 transition-all shadow-lg shadow-team-secondary/20">
+          {VAULT.cta}
         </button>
-        <p className="text-gray-600 text-xs mt-4">$19/month &bull; Cancel anytime &bull; 7-day free trial</p>
+        <p className="text-gray-600 text-xs mt-4">{VAULT.price} &bull; Cancel anytime &bull; 7-day free trial</p>
       </section>
 
       {/* Footer */}
@@ -12225,18 +12387,18 @@ function LandingPage() {
                 <line x1="33" y1="24" x2="37" y2="24" stroke="var(--team-secondary)" strokeWidth="1" opacity="0.3" />
               </svg>
               <div>
-                <span className="text-sm font-bold text-white">NBA Vault</span>
-                <p className="text-[10px] text-gray-500">Daily NBA Betting Edges</p>
+                <span className="text-sm font-bold text-white">{VAULT.brand}</span>
+                <p className="text-[10px] text-gray-500">{VAULT.tagline}</p>
               </div>
             </div>
             <div className="flex gap-6 text-xs">
-              <button onClick={goToPicks} className="text-gray-400 hover:text-team-secondary transition-colors">Picks</button>
+              <button onClick={goToVault} className="text-gray-400 hover:text-team-secondary transition-colors">{VAULT.signals}</button>
               <button onClick={() => { window.history.pushState(null, '', '/wiki'); window.dispatchEvent(new PopStateEvent('popstate')); }} className="text-gray-400 hover:text-team-secondary transition-colors">Wiki</button>
               <button onClick={() => { window.history.pushState(null, '', '/faq'); window.dispatchEvent(new PopStateEvent('popstate')); }} className="text-gray-400 hover:text-team-secondary transition-colors">FAQ</button>
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-white/[0.04] text-center">
-            <p className="text-gray-600 text-[10px]">&copy; {new Date().getFullYear()} NBA Vault. Not affiliated with the NBA. For entertainment purposes only. Please bet responsibly.</p>
+            <p className="text-gray-600 text-[10px]">&copy; {new Date().getFullYear()} {VAULT.brand}. Not affiliated with the NBA. For entertainment purposes only. Please bet responsibly.</p>
           </div>
         </div>
       </footer>
@@ -12252,18 +12414,19 @@ function FAQPage() {
   const [openIdx, setOpenIdx] = useState(null);
 
   const faqs = [
-    { q: 'How do the Daily Picks work?', a: 'Our projection model uses 7 factors — opponent defense rank, pace, recent form, home/away splits, injury impact, minutes consistency, and edge decay — to project player stats. Projections are compared against real sportsbook lines from DraftKings and FanDuel to surface positive-edge plays. Picks are locked in once generated each day for consistency.' },
-    { q: 'Are the betting lines real?', a: 'When sportsbook data is available, lines come directly from DraftKings and FanDuel via The Odds API. When live lines aren\'t available, the engine uses model-projected lines based on season averages. Live line picks receive a confidence bonus since they\'re verified by the market.' },
-    { q: 'How does the engine learn?', a: 'The engine self-calibrates after every resolved pick using a Bayesian feedback loop. It stores two learning signals per pick — projection error (how far off the model was) and edge reliability (whether the edge direction predicted correctly). If projection errors are consistently high, the model reduces matchup weight. If edge direction is unreliable, it reduces multiple factor weights.' },
-    { q: 'Are these bets guaranteed to win?', a: 'No bet is ever guaranteed. Our model identifies positive-edge opportunities where the projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual bets can and will lose.' },
+    { q: 'How do Vault Signals work?', a: 'The Vault Engine uses 7 factors — opponent defense rank, pace, recent form, home/away splits, injury impact, minutes consistency, and edge decay — to project player stats. Vault Projections are compared against real sportsbook lines from DraftKings and FanDuel to surface positive-edge signals. Signals lock in once generated each day for consistency.' },
+    { q: 'Are the betting lines real?', a: 'When sportsbook data is available, lines come directly from DraftKings and FanDuel via The Odds API. When live lines aren\'t available, the Vault Engine uses model-projected lines based on season averages. Live line signals receive a Vault Score bonus since they\'re verified by the market.' },
+    { q: 'How does the Vault Engine learn?', a: 'The Vault Engine self-calibrates after every resolved signal using a Bayesian feedback loop. It stores two learning signals per pick — projection error (how far off the model was) and edge reliability (whether the edge direction predicted correctly). If projection errors are consistently high, the engine reduces matchup weight. If edge direction is unreliable, it reduces multiple factor weights.' },
+    { q: 'Is the Vault guaranteed to win?', a: 'No bet is ever guaranteed. The Vault Engine identifies positive-edge opportunities where the Vault Projection exceeds the line. Over time, consistently betting positive edge leads to profit — but individual signals can and will lose.' },
+    { q: 'What is the Vault Lock of the Day?', a: 'The Vault Lock is the single highest-confidence signal each day — the one play where the Vault Engine has the strongest conviction. It is always free and visible to all users.' },
     { q: 'How do I switch teams?', a: 'Click the team logo in the navigation bar to open the team selector. Your selection is saved automatically and persists across sessions.' },
     { q: 'What data does each team have?', a: 'All 30 NBA teams have real rosters with player names, stats, headshot images, scouting reports, and player comparisons. Every team has 25 draft prospects with team-specific fit analysis, dynamic positional needs, 25 custom poll questions, a lineup builder, and a trade machine.' },
     { q: 'How does the Mock Draft Simulator work?', a: 'The simulator uses real lottery odds from Tankathon.com to randomly determine draft order (top 4 picks by lottery, picks 5-14 by inverse record). Then AI logic simulates each team\'s pick. Each run produces different results.' },
-    { q: 'Can I share a specific section?', a: 'Yes! Each tab has its own clean URL. Share the Draft by sending nbavault.com/draft, or the Picks by sending nbavault.com/picks.' },
-    { q: 'What happens when I sign up with my email?', a: 'You\'ll receive a welcome email with today\'s Pick of the Day and be added to the waitlist for full paid access when it launches. No spam — you can unsubscribe anytime.' },
+    { q: 'Can I share a specific section?', a: 'Yes! Each tab has its own clean URL. Share the Draft by sending nbavault.com/draft, or the Vault by sending nbavault.com/vault.' },
+    { q: 'What happens when I sign up with my email?', a: 'You\'ll receive a welcome email with today\'s Vault Lock of the Day and be added to the waitlist for full Vault access when it launches. No spam — you can unsubscribe anytime.' },
     { q: 'Is this an official NBA product?', a: 'No. NBA Vault is an independent project with no affiliation to the NBA, any NBA team, or the National Basketball Players Association. All team names, logos, and player likenesses are property of their respective owners.' },
     { q: 'What browsers are supported?', a: 'Any modern browser (Chrome, Firefox, Safari, Edge) with JavaScript enabled. Works on desktop and mobile.' },
-    { q: 'What sportsbooks does this work with?', a: 'Our picks work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
+    { q: 'What sportsbooks does this work with?', a: 'Vault Signals work with any sportsbook that offers NBA player props — DraftKings, FanDuel, BetMGM, Caesars, and more. Lines may vary slightly between books.' },
     { q: 'How does the Draft Simulator work?', a: 'The SIM tab runs a full interactive 2026 NBA Draft experience. The lottery determines draft order using real odds from Tankathon. AI teams pick based on positional needs and roster analysis. You make the pick for your team with full scouting reports, pro comparisons, and projected lineup impact. You can continue through all 30 first-round picks.' },
     { q: 'How does the Trade Center work?', a: 'The TRADE tab lets you build trades between any two teams, with a live fairness meter, player valuations, and AI-generated trade suggestions based on your team\'s needs. After executing a trade, both teams receive report cards with stat impact analysis and need-fit evaluation.' },
   ];
@@ -12298,13 +12461,15 @@ function FAQPage() {
 // MAIN APP
 // ============================================================
 const TAB_SLUGS = {
-  'ROSTER': 'roster', 'DRAFT': 'draft', 'SIM': 'sim', 'TRADE': 'trade', 'PICKS': 'picks',
+  'ROSTER': 'roster', 'DRAFT': 'draft', 'SIM': 'sim', 'TRADE': 'trade', 'PICKS': 'vault',
   'POLL': 'poll', 'TRADES': 'trades', 'LINEUPS': 'lineups', 'FAN MAP': 'fanmap',
   'WIKI': 'wiki', 'FAQ': 'faq', 'LANDING': 'nba-betting-edges'
 };
 const SLUG_TO_TAB = Object.fromEntries(Object.entries(TAB_SLUGS).map(([k, v]) => [v, k]));
 // Backward compat: old hash slugs -> new
 SLUG_TO_TAB['daily-picks'] = 'PICKS';
+SLUG_TO_TAB['picks'] = 'PICKS';
+SLUG_TO_TAB['vault-signals'] = 'PICKS';
 
 function getTabFromPath() {
   // Read from pathname (404.html is a copy of index.html, so deep links work directly)
@@ -12421,7 +12586,7 @@ function App() {
   useEffect(() => {
     if (activeTab === 'PICKS' || activeTab === 'LANDING') {
       applyTeamColors(VAULT_COLORS);
-      document.title = activeTab === 'LANDING' ? 'NBA Betting Edges | NBA Vault' : 'Daily Picks | NBA Vault';
+      document.title = activeTab === 'LANDING' ? 'NBA Betting Edges | NBA Vault' : `${VAULT.signals} | ${VAULT.brand}`;
     } else {
       applyTeamColors(config.colors);
       document.title = `${config.fullName} | NBA Vault`;
@@ -12483,13 +12648,13 @@ function App() {
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight">
             {activeTab === 'PICKS' ? (
-              <><span className="text-team-secondary">DAILY</span> <span className="text-white">PICKS</span></>
+              <><span className="text-team-secondary">VAULT</span> <span className="text-white">SIGNALS</span></>
             ) : (
               <><span className="text-team-secondary">{config.city.toUpperCase()}</span> <span className="text-white">{config.name.toUpperCase()}</span></>
             )}
           </h1>
           <p className="text-xs md:text-sm text-gray-400 tracking-widest mt-1">
-            {activeTab === 'PICKS' ? 'Real edges. Real lines. Updated daily before tip-off.' : '2026-27 \u2022 NBA VAULT'}
+            {activeTab === 'PICKS' ? VAULT.picksSub : '2026-27 \u2022 NBA VAULT'}
           </p>
         </div>
       </header>
@@ -12536,7 +12701,7 @@ function App() {
                   ? 'bg-team-secondary text-black shadow-lg shadow-team-secondary/20'
                   : 'text-white bg-white/[0.08] border border-white/[0.15] hover:bg-white/[0.14] hover:border-white/[0.25]'
               }`}>
-              PICKS
+              VAULT
             </button>
           </div>
         </div>
@@ -12577,18 +12742,18 @@ function App() {
                 <line x1="33" y1="24" x2="37" y2="24" stroke="var(--team-secondary)" strokeWidth="1" opacity="0.3" />
               </svg>
               <div>
-                <span className="text-sm font-bold text-white">NBA Vault</span>
-                <p className="text-[10px] text-gray-500">Daily NBA Betting Edges</p>
+                <span className="text-sm font-bold text-white">{VAULT.brand}</span>
+                <p className="text-[10px] text-gray-500">{VAULT.tagline}</p>
               </div>
             </div>
             <div className="flex gap-6 text-xs">
-              <button onClick={() => navigateTo('PICKS')} className="text-gray-400 hover:text-team-secondary transition-colors">Picks</button>
+              <button onClick={() => navigateTo('PICKS')} className="text-gray-400 hover:text-team-secondary transition-colors">{VAULT.signals}</button>
               <button onClick={() => navigateTo('WIKI')} className="text-gray-400 hover:text-team-secondary transition-colors">Wiki</button>
               <button onClick={() => navigateTo('FAQ')} className="text-gray-400 hover:text-team-secondary transition-colors">FAQ</button>
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-white/[0.04] text-center">
-            <p className="text-gray-600 text-[10px]">&copy; {new Date().getFullYear()} NBA Vault. Not affiliated with the NBA. For entertainment purposes only. Please bet responsibly.</p>
+            <p className="text-gray-600 text-[10px]">&copy; {new Date().getFullYear()} {VAULT.brand}. Not affiliated with the NBA. For entertainment purposes only. Please bet responsibly.</p>
           </div>
         </div>
       </footer>
