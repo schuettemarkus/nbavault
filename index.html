@@ -8531,6 +8531,41 @@ function InteractiveDraftSim() {
   }
 
   // Advance one pick
+  function generatePickFitAnalysis(prospect, teamConfig, fillsNeed, posNeeds) {
+    const starters = (teamConfig.players || []).filter(pl => pl.starter);
+    const last = prospect.name.split(' ').pop();
+    const primaryPos = (prospect.pos || 'SF').split('/')[0];
+    const posMap = { PG: ['PG'], SG: ['SG','G'], SF: ['SF','F','GF'], PF: ['PF','F'], C: ['C'] };
+    const overlapping = starters.filter(pl => (posMap[primaryPos] || []).some(pp => (pl.pos || '').includes(pp)));
+    const bestScorer = starters.sort((a, b) => b.stats.ppg - a.stats.ppg)[0];
+    const radar = prospect.radar || {};
+
+    let fit = 5;
+    if (fillsNeed) fit += 2;
+    if (prospect.rank <= 5) fit += 1;
+    if (overlapping.length === 0) fit += 1;
+    if (overlapping.length >= 2) fit -= 1;
+    if (radar.Shooting >= 75) fit += 1;
+    if (radar.Defense >= 70 && fillsNeed) fit += 1;
+    fit = Math.min(10, Math.max(3, fit));
+
+    const parts = [];
+    if (fillsNeed && overlapping.length === 0) {
+      parts.push(`${last} fills a clear gap at ${primaryPos} — the ${teamConfig.fullName} have no starter at his position.`);
+    } else if (fillsNeed) {
+      parts.push(`${last} addresses the ${teamConfig.name}'s need at ${primaryPos}, competing with ${overlapping[0]?.name.split(' ').pop() || 'the incumbent'} for minutes.`);
+    } else {
+      parts.push(`${last} doesn't fill a primary need (${posNeeds.join('/')}) but his talent at #${prospect.rank} is hard to pass up.`);
+    }
+    if (bestScorer) parts.push(`Playing alongside ${bestScorer.name.split(' ').pop()} (${bestScorer.stats.ppg} PPG) gives ${last} room to develop.`);
+    if (radar.Shooting >= 75) parts.push(`His shooting (${radar.Shooting}/100) adds spacing ${teamConfig.coach} can leverage.`);
+    else if (radar.Defense >= 75) parts.push(`Defensive upside (${radar.Defense}/100) fits ${teamConfig.coach}'s scheme.`);
+    else if (radar.Athleticism >= 85) parts.push(`Elite athleticism creates transition opportunities.`);
+    if (prospect.comps && prospect.comps[0]) parts.push(`Comp: ${prospect.comps[0]}.`);
+
+    return { fit, analysis: parts.join(' ') };
+  }
+
   function advancePick(avail, currentPicks, pickNum) {
     const team = lotteryOrder[pickNum - 1];
     if (!team) return;
@@ -8544,7 +8579,10 @@ function InteractiveDraftSim() {
     const { needs: teamNeeds, posNeeds } = getTeamNeeds(abbr);
     const pickedPositions = picked.pos.split('/');
     const fillsNeed = posNeeds.some(n => pickedPositions.includes(n));
-    const newPick = { ...team, pick: pickNum, player: picked, grade, abbr, teamNeeds, fillsNeed };
+    // Generate team-specific fit analysis for the draft board
+    const tc = TEAM_CONFIGS[abbr];
+    const fitInfo = tc ? generatePickFitAnalysis(picked, tc, fillsNeed, posNeeds) : { fit: 5, analysis: '' };
+    const newPick = { ...team, pick: pickNum, player: picked, grade, abbr, teamNeeds, fillsNeed, fitScore: fitInfo.fit, fitAnalysis: fitInfo.analysis };
     const newPicks = [...currentPicks, newPick];
 
     setPicks(newPicks);
@@ -8934,6 +8972,17 @@ function InteractiveDraftSim() {
                             }
                           </div>
                         </div>
+
+                        {/* Team Fit Analysis */}
+                        {p.fitAnalysis && (
+                          <div className="mb-3 rounded-lg p-2.5 border border-team-secondary/15" style={{ background: 'rgba(var(--team-secondary-rgb),0.04)' }}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="text-[10px] text-gray-500 uppercase tracking-wider">Team Fit</div>
+                              {p.fitScore && <span className={`text-xs font-black ${p.fitScore >= 8 ? 'text-green-400' : p.fitScore >= 6 ? 'text-team-secondary' : 'text-gray-500'}`}>{p.fitScore}/10</span>}
+                            </div>
+                            <div className="text-xs text-gray-300 leading-relaxed">{p.fitAnalysis}</div>
+                          </div>
+                        )}
 
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2 mb-3">
