@@ -10755,9 +10755,22 @@ function DailyPicks() {
       })
       .slice(0, 15);
 
-    // Save today's picks to history (if not already there)
+    // Stabilize picks: if a pick already exists in history for today, use the saved line/projection
+    // This prevents the track record from changing on every refresh
+    const historyMap = {};
+    engine.history.filter(h => h.date === dateKey).forEach(h => { historyMap[h.id] = h; });
+    const stablePicks = picks.map(p => {
+      const saved = historyMap[p.id];
+      if (saved) {
+        // Use saved line/projection/edge — these are locked in for the day
+        return { ...p, line: saved.line, projection: saved.projection, edge: saved.edge, confidence: saved.confidence };
+      }
+      return p;
+    });
+
+    // Save new picks to history (if not already there)
     const existingIds = new Set(engine.history.map(h => h.id));
-    const newHistory = picks.filter(p => !existingIds.has(p.id)).map(p => ({
+    const newHistory = stablePicks.filter(p => !existingIds.has(p.id)).map(p => ({
       id: p.id, date: dateKey, player: p.player, teamAbbr: p.teamAbbr,
       statType: p.statType, line: p.line, projection: p.projection, edge: p.edge,
       confidence: p.confidence, hadInjuryBoost: p.hadInjuryBoost,
@@ -10769,7 +10782,7 @@ function DailyPicks() {
       saveVaultEngine(updated);
     }
 
-    return { allPicks: picks, todaysGames: games };
+    return { allPicks: stablePicks, todaysGames: games };
   }, [schedule, engine.weights, oddsLines]);
 
   const bestPick = useMemo(() => selectBestBet(allPicks), [allPicks]);
@@ -11249,20 +11262,39 @@ function DailyPicks() {
                                 <svg className="w-3.5 h-3.5 text-team-secondary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                 <span className="text-[10px] font-black text-team-secondary uppercase tracking-wider">Pick of the Game</span>
                               </div>
-                              <div className="flex items-center gap-3">
-                                {gamePick.headshot && <img src={gamePick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-bold text-white truncate">{gamePick.player}</div>
-                                  <div className="text-[10px] text-gray-500">{gamePick.teamAbbr} · {gamePick.pos}</div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <div className="text-sm font-black text-team-secondary"><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
-                                  <div className="flex items-center gap-1.5 justify-end">
-                                    <span className="text-xs text-green-400 font-bold">+{gamePick.edge}</span>
-                                    <span className="text-[10px] text-gray-500">{gamePick.confidence}%</span>
+                              {(() => {
+                                const live = getLiveStatus(gamePick, liveStats);
+                                return (
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  {gamePick.headshot && <img src={gamePick.headshot} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" loading="lazy" />}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+                                      {gamePick.player}
+                                      {live && (live.status === 'hit' || live.status === 'winning') && (
+                                        <span className="text-[8px] px-1 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold border border-green-500/30">
+                                          {live.status === 'hit' ? 'HITTING' : 'ON PACE'} {live.current}
+                                        </span>
+                                      )}
+                                      {live?.status === 'behind' && (
+                                        <span className="text-[8px] px-1 py-0.5 rounded-full bg-white/5 text-gray-500 font-medium">
+                                          {live.current} {gamePick.statType}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-gray-500">{gamePick.teamAbbr} · {gamePick.pos}</div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="text-sm font-black text-team-secondary"><span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.5 rounded bg-team-secondary/20 mr-1 align-middle">OVR</span>{gamePick.line} {gamePick.statType}</div>
+                                    <div className="flex items-center gap-1.5 justify-end">
+                                      <span className="text-xs text-green-400 font-bold">+{gamePick.edge}</span>
+                                      <span className="text-[10px] text-gray-500">{gamePick.confidence}%</span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
