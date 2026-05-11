@@ -8606,54 +8606,106 @@ function InteractiveDraftSim() {
     const lottery = simulateLottery(lotteryTeams);
     setLotteryOrder(lottery);
     const teamSlot = lottery.findIndex(t => t.team === teamLotteryName);
-    setTeamPickNum(teamSlot >= 0 ? teamSlot + 1 : 7 + Math.floor(Math.random() * 8));
+    const pick = teamSlot >= 0 ? teamSlot + 1 : 7 + Math.floor(Math.random() * 8);
+    setTeamPickNum(pick);
+    setTradeOffers(buildTradeOffers(pick));
     setPhase('trading');
   }
 
-  // Generate trade offers for the user's pick position
-  function getTradeOffers() {
-    const starters = (teamData.players || []).filter(pl => pl.starter);
-    const tradeAsset = starters.sort((a, b) => (b.stats?.ppg || 0) - (a.stats?.ppg || 0))[1];
-    const offers = [];
+  // Generate 10 randomized trade offers for the user's pick position
+  const [tradeOffers, setTradeOffers] = useState(() => buildTradeOffers(teamPickNum));
 
-    if (teamPickNum > 1) {
-      const targetPick = Math.max(1, teamPickNum - 1);
-      const targetTeam = lotteryOrder[targetPick - 1];
-      offers.push({
-        id: 'up', label: 'TRADE UP', emoji: '\u2B06',
-        desc: `Move up to #${targetPick}`,
-        send: `#${teamPickNum} pick + ${tradeAsset?.name || 'key player'}`,
-        receive: `#${targetPick} pick from ${targetTeam?.team || 'unknown'}`,
-        newPick: targetPick,
-        risk: 'High risk — gut the roster for a better prospect',
+  function buildTradeOffers(pickNum) {
+    const players = teamData.players || [];
+    const starters = players.filter(pl => pl.starter).sort((a, b) => (b.stats?.ppg || 0) - (a.stats?.ppg || 0));
+    const bench = players.filter(pl => !pl.starter).sort((a, b) => (b.stats?.ppg || 0) - (a.stats?.ppg || 0));
+    const starterNames = starters.map(p => p.name);
+    const benchNames = bench.slice(0, 5).map(p => p.name);
+    const pick = pickNum;
+    const pool = [];
+
+    // Sweeteners for trade packages
+    const sweeteners = ['2027 2nd-round pick', '2028 2nd-round pick', '2027 protected 1st', 'cash considerations', '2028 pick swap rights'];
+    const randSweet = () => sweeteners[Math.floor(Math.random() * sweeteners.length)];
+
+    // Trade UP options (move to a higher pick)
+    for (let gap = 1; gap <= Math.min(pick - 1, 4); gap++) {
+      const target = pick - gap;
+      const partner = lotteryOrder[target - 1];
+      if (!partner) continue;
+      const asset = gap >= 3 ? starterNames[0] : gap >= 2 ? (starterNames[1] || starterNames[0]) : (benchNames[0] || starterNames[2] || 'rotation player');
+      const extra = gap >= 3 ? ` + ${randSweet()}` : gap >= 2 ? ` + ${randSweet()}` : '';
+      pool.push({
+        id: `up-${gap}`, label: 'TRADE UP', emoji: '↑',
+        desc: `Move up to #${target}`,
+        send: `#${pick} pick + ${asset}${extra}`,
+        receive: `#${target} pick from ${partner.team}`,
+        newPick: target,
+        risk: gap >= 3 ? 'Very high risk — massive roster sacrifice for a top prospect' : gap >= 2 ? 'High risk — giving up a key player to move up' : 'Moderate risk — small move up costs a bench piece',
         color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30',
       });
     }
 
-    offers.push({
-      id: 'stay', label: 'STAY PUT', emoji: '\u2714',
-      desc: `Keep the #${teamPickNum} pick`,
-      send: 'Nothing', receive: `Draft at #${teamPickNum}`,
-      newPick: teamPickNum,
+    // STAY PUT (always included)
+    pool.push({
+      id: 'stay', label: 'STAY PUT', emoji: '✓',
+      desc: `Keep the #${pick} pick`,
+      send: 'Nothing', receive: `Draft at #${pick}`,
+      newPick: pick,
       risk: 'No risk — draft your guy at value',
       color: 'text-team-secondary', bg: 'bg-team-secondary/10', border: 'border-team-secondary/30',
     });
 
-    if (teamPickNum < 14) {
-      const targetPick = Math.min(14, teamPickNum + 2);
-      const targetTeam = lotteryOrder[targetPick - 1];
-      offers.push({
-        id: 'down', label: 'TRADE DOWN', emoji: '\u2B07',
-        desc: `Drop to #${targetPick} + bonus pick`,
-        send: `#${teamPickNum} pick`,
-        receive: `#${targetPick} pick + future 1st from ${targetTeam?.team || 'unknown'}`,
-        newPick: targetPick,
-        risk: 'Moderate risk — more assets but lose top prospect access',
+    // Trade DOWN options (drop for extra assets)
+    for (let gap = 1; gap <= Math.min(14 - pick, 5); gap++) {
+      const target = pick + gap;
+      const partner = lotteryOrder[target - 1];
+      if (!partner) continue;
+      const bonus = gap >= 4 ? `future 1st + ${randSweet()} + ${benchNames[Math.floor(Math.random() * Math.max(1, benchNames.length))] || 'young player'}`
+        : gap >= 2 ? `future 1st + ${randSweet()}`
+        : randSweet();
+      pool.push({
+        id: `down-${gap}`, label: 'TRADE DOWN', emoji: '↓',
+        desc: `Drop to #${target} + assets`,
+        send: `#${pick} pick`,
+        receive: `#${target} pick + ${bonus} from ${partner.team}`,
+        newPick: target,
+        risk: gap >= 4 ? 'Low risk — massive asset haul but likely miss top talent' : gap >= 2 ? 'Moderate risk — solid return but your guy might be gone' : 'Low risk — small drop with nice sweetener',
         color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30',
       });
     }
 
-    return offers;
+    // Multi-pick package (trade down for 2 picks)
+    if (pick <= 10) {
+      const p1 = Math.min(14, pick + 3);
+      const p2 = Math.min(14, pick + 7);
+      if (p1 !== p2 && p1 <= 14) {
+        const partner1 = lotteryOrder[p1 - 1];
+        pool.push({
+          id: 'multi', label: 'PACKAGE DEAL', emoji: '⟐',
+          desc: `Two picks: #${p1} + #${p2}`,
+          send: `#${pick} pick + ${benchNames[0] || 'bench player'}`,
+          receive: `#${p1} + #${p2} picks`,
+          newPick: p1,
+          risk: 'Moderate risk — two lottery picks, build depth over star power',
+          color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/30',
+        });
+      }
+    }
+
+    // Shuffle non-stay offers, then place stay in a natural position
+    const stay = pool.find(o => o.id === 'stay');
+    const rest = pool.filter(o => o.id !== 'stay');
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+
+    // Take 9 random offers + stay = 10 total, put stay near the middle
+    const selected = rest.slice(0, 9);
+    const mid = Math.floor(selected.length / 2);
+    selected.splice(mid, 0, stay);
+    return selected;
   }
 
   function executeTrade(offer) {
@@ -9853,25 +9905,23 @@ function DraftSimulator() {
             <h3 className="text-lg font-black text-team-secondary">DRAFT DAY TRADE OFFERS</h3>
             <p className="text-gray-400 text-sm mt-1">The {config.fullName} hold the #{teamPickNum} pick. The phone is ringing.</p>
           </div>
-          <div className="space-y-3">
-            {getTradeOffers().map(offer => (
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto scrollbar-hide">
+            {tradeOffers.map(offer => (
               <button key={offer.id} onClick={() => executeTrade(offer)}
-                className={`w-full glass rounded-xl p-4 text-left transition-all hover:scale-[1.01] border ${offer.border}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{offer.emoji}</span>
-                    <span className={`font-black text-sm ${offer.color}`}>{offer.label}</span>
-                  </div>
-                  <span className="text-xs text-gray-500">{offer.desc}</span>
+                className={`w-full glass rounded-xl p-3 text-left transition-all hover:scale-[1.005] border ${offer.border}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-base">{offer.emoji}</span>
+                  <span className={`font-black text-xs ${offer.color}`}>{offer.label}</span>
+                  <span className="text-[10px] text-gray-500">{offer.desc}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-2">
-                  <div className={`rounded-lg p-2 ${offer.bg}`}>
-                    <div className="text-[10px] text-gray-500 mb-0.5">YOU SEND</div>
-                    <div className="text-xs font-semibold text-gray-200">{offer.send}</div>
+                <div className="grid grid-cols-2 gap-2 mb-1.5">
+                  <div className={`rounded-lg px-2 py-1.5 ${offer.bg}`}>
+                    <div className="text-[9px] text-gray-500">SEND</div>
+                    <div className="text-[11px] font-semibold text-gray-200">{offer.send}</div>
                   </div>
-                  <div className={`rounded-lg p-2 ${offer.bg}`}>
-                    <div className="text-[10px] text-gray-500 mb-0.5">YOU RECEIVE</div>
-                    <div className="text-xs font-semibold text-gray-200">{offer.receive}</div>
+                  <div className={`rounded-lg px-2 py-1.5 ${offer.bg}`}>
+                    <div className="text-[9px] text-gray-500">RECEIVE</div>
+                    <div className="text-[11px] font-semibold text-gray-200">{offer.receive}</div>
                   </div>
                 </div>
                 <div className="text-[10px] text-gray-500 italic">{offer.risk}</div>
