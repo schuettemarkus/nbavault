@@ -3,19 +3,46 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="NBA Vault — Roster breakdowns, mock draft simulator, trade machine, lineup builder, and fan polls for all 30 NBA teams" />
+<meta name="description" content="NBA Vault — Roster breakdowns, 2026 Draft simulator, trade machine, and Vault Engine betting intelligence for all 30 NBA teams" />
 <meta name="referrer" content="no-referrer" />
-<meta property="og:title" content="NBA Vault — Unlock the Vault for NBA Betting Edges" />
-<meta property="og:description" content="Vault Engine analyzes injuries, matchups, and player trends to detect mispriced betting lines. Real DraftKings & FanDuel lines. Free Vault Lock of the Day." />
+<meta property="og:title" content="NBA Vault — All 30 Teams, One Vault" />
+<meta property="og:description" content="2026 Draft simulator with real lottery results, roster breakdowns, trade machine, and Vault Engine betting intelligence for every NBA team." />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://nbavault.com/vault" />
+<meta property="og:url" content="https://nbavault.com" />
 <meta property="og:image" content="https://nbavault.com/og-card.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="NBA Vault — Vault Engine Betting Intelligence" />
-<meta name="twitter:description" content="Real DraftKings/FanDuel lines. Vault Lock of the Day with edge % and Vault Scores. Full transparency — every signal, every outcome." />
+<meta name="twitter:title" content="NBA Vault — All 30 Teams, One Vault" />
+<meta name="twitter:description" content="2026 Draft simulator with real lottery results, roster breakdowns, trade machine, and Vault Engine betting intelligence." />
 <meta name="twitter:image" content="https://nbavault.com/og-card.png" />
+<script>
+// Route-aware OG tags — runs synchronously before crawlers parse the DOM
+(function(){
+  var p = location.pathname.replace(/^\//,'').replace(/\/$/,'');
+  var og = {
+    sim:   { title:'2026 NBA Draft Simulator | NBA Vault', desc:'Pick your team. Run the lottery. Draft your franchise player. Full 14-pick draft board with grades, scouting reports, and NBA comparisons.', img:'og-sim.png' },
+    draft: { title:'2026 NBA Draft Room | NBA Vault', desc:'Top 29 prospects ranked with real college stats, radar charts, strengths/concerns, and team fit analysis for all 30 NBA teams.', img:'og-draft.png' },
+    vault: { title:'Vault Engine — NBA Betting Intelligence | NBA Vault', desc:'Vault Engine analyzes injuries, matchups, and player trends to detect mispriced betting lines. Real DraftKings & FanDuel lines. Free Vault Lock of the Day.', img:'og-card.png' },
+    roster:{ title:'NBA Team Rosters & Analysis | NBA Vault', desc:'Full roster breakdowns, player stats, radar charts, and depth charts for all 30 NBA teams. 2026-27 season ready.', img:'og-roster.png' },
+    trade: { title:'NBA Trade Center | NBA Vault', desc:'Build trades, check fairness, explore AI trade ideas, and track player valuations across all 30 NBA teams.', img:'og-trade.png' },
+    poll:  { title:'NBA Fan Polls | NBA Vault', desc:'Vote on the biggest debates in basketball. See how your opinions stack up against fans of all 30 NBA teams.', img:'og-poll.png' },
+    'nba-betting-edges': { title:'NBA Betting Edges — Vault Engine | NBA Vault', desc:'Real DraftKings/FanDuel lines. Vault Lock of the Day with edge % and Vault Scores. Full transparency — every signal, every outcome.', img:'og-card.png' }
+  };
+  var data = og[p];
+  if(data){
+    var set = function(sel, val){ var el = document.querySelector(sel); if(el) el.setAttribute('content', val); };
+    set('meta[property="og:title"]', data.title);
+    set('meta[property="og:description"]', data.desc);
+    set('meta[property="og:url"]', 'https://nbavault.com/' + p);
+    set('meta[property="og:image"]', 'https://nbavault.com/' + data.img);
+    set('meta[name="twitter:title"]', data.title);
+    set('meta[name="twitter:description"]', data.desc);
+    set('meta[name="twitter:image"]', 'https://nbavault.com/' + data.img);
+    document.title = data.title;
+  }
+})();
+</script>
 <title>NBA Vault</title>
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#4E008E" />
@@ -57,6 +84,7 @@ tailwind.config = {
 <script src="https://unpkg.com/prop-types@15/prop-types.min.js" defer></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" defer></script>
 <script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 <style>
 :root {
   --team-primary: #4E008E;
@@ -488,259 +516,237 @@ const JAZZ_PLAYERS = [
 // ============================================================
 const JAZZ_PROSPECTS = [
   { rank: 1, name: "AJ Dybantsa", pos: "SF", school: "BYU", height: "6'9\"", age: 19, jazzFit: 9, stars: 5,
-    stats: { ppg: 22.9, rpg: 7.1, apg: 3.9 },
-    radar: { Scoring: 92, Playmaking: 72, Defense: 68, Athleticism: 90, Shooting: 70, IQ: 78 },
-    strengths: ["Elite downhill attack with physicality to finish through contact", "Physical tools are NBA-ready — 6'9\" with guard skills", "High basketball IQ and advanced feel for the game"],
-    concerns: ["Perimeter shot consistency — streaky from three (33%)", "Individual defense needs polish despite tools"],
-    jazzFitAnalysis: "Dybantsa would instantly become the Jazz's most talented player and the long-term franchise cornerstone alongside JJJ. His ability to attack downhill and finish at the rim complements Markkanen's perimeter scoring perfectly. With George feeding him in transition and JJJ protecting the rim behind him, Dybantsa would have an ideal environment to develop into a superstar. The only question is whether the Jazz pick high enough to get him.",
+    stats: { ppg: 25.5, rpg: 6.8, apg: 3.7 },
+    radar: { Scoring: 95, Playmaking: 72, Defense: 65, Athleticism: 92, Shooting: 68, IQ: 78 },
+    strengths: ["Led the nation with 25.5 PPG on 51% FG — consensus All-American", "Physical 6'9\" wing with guard skills and explosive downhill attack", "Broke 19 BYU freshman records including scoring record (43 vs Utah)"],
+    concerns: ["Three-point consistency at 33.1% on volume attempts", "Defensive engagement and effort need polish despite elite tools"],
+    jazzFitAnalysis: "Dybantsa would instantly become the Jazz's franchise cornerstone at #1. His 25.5 PPG scoring ability paired with Markkanen's spacing and Kessler's rim protection creates an elite offensive ecosystem. With George as a secondary ball-handler and Bailey on the wing, Hardy would have a devastating five-out lineup. The concern is the Jazz pick #2 — Washington is expected to take him first.",
     comps: ["Jayson Tatum", "Paul George"], projected: "Top 3" },
-  { rank: 2, name: "Darryn Peterson", pos: "PG/SG", school: "Kansas", height: "6'5\"", age: 19, jazzFit: 8, stars: 5,
-    stats: { ppg: 22.6, rpg: 4.7, apg: 2.1 },
-    radar: { Scoring: 90, Playmaking: 68, Defense: 60, Athleticism: 85, Shooting: 75, IQ: 72 },
-    strengths: ["Superstar-level offensive upside with elite shot creation", "Playmaking and vision beyond his years", "Size for the position at 6'5\" allows versatile deployment"],
-    concerns: ["Cramping and health concerns dogged him at Kansas", "Limited APG suggests still-developing court vision"],
-    jazzFitAnalysis: "Peterson could eventually replace George as the primary ball-handler or play alongside him in an oversized backcourt. His scoring ability would give the Jazz another elite shot creator, something they desperately need in crunch time. The health questions are a concern, but the talent is undeniable. In Hardy's system, Peterson would have the freedom to create while JJJ and Markkanen space the floor.",
+  { rank: 2, name: "Darryn Peterson", pos: "PG/SG", school: "Kansas", height: "6'6\"", age: 19, jazzFit: 9, stars: 5,
+    stats: { ppg: 20.2, rpg: 4.2, apg: 1.6 },
+    radar: { Scoring: 88, Playmaking: 58, Defense: 62, Athleticism: 85, Shooting: 80, IQ: 72 },
+    strengths: ["Buttery smooth scorer — 38.2% from three with elite shot creation", "Positional size at 6'6\" with long wingspan for versatile deployment", "12 games with 20+ points — big-game scorer with limitless range"],
+    concerns: ["Health concerns limited him to 24 games at Kansas", "Playmaking still developing — only 1.6 APG suggests scorer-first mentality"],
+    jazzFitAnalysis: "Peterson is the consensus #2 pick and the Jazz's most likely selection. His elite shooting (38.2% from three) would give Utah a true franchise scorer to build around alongside Markkanen. At 6'6\", he can play next to George in an oversized backcourt or shift Bailey to the 3. His scoring gravity would unlock easier shots for everyone. The health concerns are worth monitoring, but the talent is franchise-caliber. Hardy's pace-and-space system is the perfect environment for Peterson's shot-creation ability.",
     comps: ["Devin Booker", "Bradley Beal"], projected: "Top 3" },
-  { rank: 3, name: "Cameron Boozer", pos: "PF", school: "Duke", height: "6'9\" 250 lbs", age: 18, jazzFit: 6, stars: 5,
-    stats: { ppg: 24.2, rpg: 11.0, apg: 4.4 },
-    radar: { Scoring: 85, Playmaking: 75, Defense: 62, Athleticism: 68, Shooting: 58, IQ: 82 },
-    strengths: ["Elite rebounder with incredible instincts", "High-IQ passer who can orchestrate offense from the post", "Strong post game and touch around the basket"],
-    concerns: ["Positional overlap with JJJ and Markkanen in frontcourt", "Athleticism questions against elite NBA bigs"],
-    jazzFitAnalysis: "The fit is complicated. Boozer is a dominant talent, but the Jazz already have Markkanen and JJJ in the frontcourt. He'd need to play center in Utah's system, which limits his passing and face-up game. The Carlos Boozer connection to Utah is poetic, but the basketball fit requires creative lineup construction. Only worth it if the Jazz view him as a generational talent regardless of positional overlap.",
-    comps: ["Julius Randle", "Domantas Sabonis"], projected: "Top 3" },
-  { rank: 4, name: "Caleb Wilson", pos: "PF/C", school: "UNC", height: "6'10\"", age: 19, jazzFit: 7, stars: 5,
-    stats: { ppg: 18.4, rpg: 9.2, apg: 2.5 },
-    radar: { Scoring: 72, Playmaking: 58, Defense: 75, Athleticism: 78, Shooting: 45, IQ: 70 },
-    strengths: ["Exceptional effort and motor — never takes a play off", "Double-double machine with elite rebounding instincts", "Versatile defender who can switch across positions"],
-    concerns: ["Three-point shooting at 25.9% is a real concern", "Ball skills still developing — limited creation ability"],
-    jazzFitAnalysis: "Wilson's stretch-5 potential pairs well with the Jazz's floor-spacing approach, though his current shooting numbers are concerning. He could back up Kessler long-term and provide a different look — more mobile and switchable. The effort and motor would be a perfect cultural fit in Hardy's system. If the shot develops, he's a steal at this range.",
+  { rank: 3, name: "Cameron Boozer", pos: "PF/C", school: "Duke", height: "6'9\"", age: 19, jazzFit: 7, stars: 5,
+    stats: { ppg: 22.5, rpg: 10.2, apg: 4.1 },
+    radar: { Scoring: 88, Playmaking: 78, Defense: 65, Athleticism: 68, Shooting: 80, IQ: 90 },
+    strengths: ["AP Player of the Year — first freshman to avg 20/10/4 since Larry Bird", "Elite shooter at 39.1% from three with dominant post game", "855 points, 389 rebounds, 157 assists — historic production"],
+    concerns: ["Positional overlap with Markkanen and Hendricks in Jazz frontcourt", "Athleticism questions — can he guard faster NBA 4s?"],
+    jazzFitAnalysis: "Boozer is the most complete player in the draft, but the Jazz fit is complicated. With Markkanen, Hendricks, and Kessler already in the frontcourt, the positional overlap is real. The Carlos Boozer-to-Utah connection is poetic, but the basketball requires moving pieces. If the Jazz take him at #2, one of Markkanen or Hendricks likely gets traded. His 39.1% three-point shooting does help the spacing equation — he and Markkanen could theoretically coexist as stretch bigs.",
+    comps: ["Domantas Sabonis", "Julius Randle"], projected: "Top 3" },
+  { rank: 4, name: "Caleb Wilson", pos: "PF/C", school: "UNC", height: "6'10\"", age: 20, jazzFit: 7, stars: 5,
+    stats: { ppg: 19.8, rpg: 9.4, apg: 2.7 },
+    radar: { Scoring: 72, Playmaking: 55, Defense: 78, Athleticism: 90, Shooting: 42, IQ: 68 },
+    strengths: ["Most gifted athlete in the draft — elite motor and explosive rim-running", "11 double-doubles (eight 20/10 games) and All-ACC First Team", "Versatile defender who switches across positions with 57.8% FG"],
+    concerns: ["Three-point shot at 25.9% is a serious red flag for spacing", "Season ended early with hand injuries — durability question"],
+    jazzFitAnalysis: "Wilson's athleticism and motor would give the Jazz a different dimension, but the 25.9% three-point shooting is a problem in Hardy's spacing-heavy system. He'd need to play center alongside Markkanen, which works defensively but limits floor spacing. If the shot develops, he's a steal. The injury concern adds risk at #2.",
     comps: ["Bam Adebayo", "Pascal Siakam"], projected: "Top 5" },
-  { rank: 5, name: "Keaton Wagler", pos: "SG/SF", school: "Illinois", height: "6'7\"", age: 19, jazzFit: 9, stars: 4.5,
-    stats: { ppg: 18.9, rpg: 5.1, apg: 2.8 },
-    radar: { Scoring: 75, Playmaking: 55, Defense: 70, Athleticism: 72, Shooting: 92, IQ: 75 },
-    strengths: ["Elite three-point shooting — 42% on high volume", "Positional size at 6'7\" for the 2/3 spots", "Excellent off-ball movement and screening reads"],
-    concerns: ["Not a primary creator — needs ball-dominant teammates", "Needs to add strength for NBA physicality"],
-    jazzFitAnalysis: "PERFECT fit for the Jazz. Wagler is a ready-made shooter who would space the floor for George's drives, Markkanen's post-ups, and JJJ's face-up game. His defensive size at 6'7\" fits Hardy's switch-everything scheme. He wouldn't need to create — just catch, shoot, and defend. This is the kind of complementary piece that turns good teams into great ones.",
+  { rank: 5, name: "Keaton Wagler", pos: "PG/SG", school: "Illinois", height: "6'6\"", age: 19, jazzFit: 9, stars: 4.5,
+    stats: { ppg: 17.9, rpg: 5.1, apg: 4.2 },
+    radar: { Scoring: 75, Playmaking: 72, Defense: 68, Athleticism: 65, Shooting: 85, IQ: 82 },
+    strengths: ["Elite decision-maker — 39.7% from three on 6 attempts per game", "Led Illinois to Final Four with high-IQ playmaking (4.2 APG)", "Positional size at 6'6\" for versatile backcourt deployment"],
+    concerns: ["Lacks traditional athleticism — no elite burst or explosiveness", "Needs to add strength for NBA physicality on both ends"],
+    jazzFitAnalysis: "Wagler is the best fit in the entire draft class for what the Jazz need. His 39.7% three-point shooting and 4.2 assists per game make him a plug-and-play starter alongside George. At 6'6\", he defends multiple positions in Hardy's switch scheme. He wouldn't need to dominate — just shoot, pass, and defend while Markkanen and Bailey create. If Peterson is off the board, Wagler should be the target.",
     comps: ["Klay Thompson", "Desmond Bane"], projected: "Top 10" },
-  { rank: 6, name: "Kingston Flemings", pos: "PG", school: "Houston", height: "6'3\"", age: 18, jazzFit: 7, stars: 4.5,
-    stats: { ppg: 16.5, rpg: 3.9, apg: 5.4 },
-    radar: { Scoring: 70, Playmaking: 78, Defense: 65, Athleticism: 82, Shooting: 60, IQ: 68 },
-    strengths: ["Elite burst and first step", "Court vision and passing instincts beyond his age", "Improving jumper with solid mechanics"],
-    concerns: ["Size at the PG position (6'3\")", "Decision-making still needs refinement"],
-    jazzFitAnalysis: "Flemings would be a long-term George backup or successor, providing an explosive backcourt piece. His playmaking would give the Jazz another creator, and his improving shot suggests shooting upside. The size concern is real, but his competitiveness and motor mitigate it. Would thrive learning behind George.",
+  { rank: 6, name: "Darius Acuff Jr.", pos: "PG", school: "Arkansas", height: "6'3\"", age: 19, jazzFit: 8, stars: 5,
+    stats: { ppg: 23.5, rpg: 3.1, apg: 6.4 },
+    radar: { Scoring: 90, Playmaking: 82, Defense: 58, Athleticism: 78, Shooting: 88, IQ: 80 },
+    strengths: ["SEC Player of the Year + Bob Cousy Award winner — best PG in class", "44% from three with 23.5 PPG — elite scoring efficiency", "Set Arkansas single-season records for points (845) and assists (232)"],
+    concerns: ["Undersized at 6'3\" — defensive liability against bigger guards", "Only 3.1 RPG — limited impact outside of scoring/passing"],
+    jazzFitAnalysis: "Acuff is the most decorated player in the class and would immediately upgrade the Jazz backcourt. His 44% three-point shooting and 6.4 assists per game would allow George to play off-ball more, which is where he's most effective. The size concern is real, but Acuff's production and winning pedigree (SEC POY, Cousy Award) suggest a player who overcomes physical limitations. In Hardy's uptempo system, Acuff would be devastating in transition.",
+    comps: ["Damian Lillard", "CJ McCollum"], projected: "Top 10" },
+  { rank: 7, name: "Kingston Flemings", pos: "PG", school: "Houston", height: "6'4\"", age: 19, jazzFit: 7, stars: 4.5,
+    stats: { ppg: 16.1, rpg: 3.9, apg: 5.2 },
+    radar: { Scoring: 72, Playmaking: 78, Defense: 65, Athleticism: 85, Shooting: 72, IQ: 70 },
+    strengths: ["Explosive speed with surgical midrange touch — 47.6% FG", "Unselfish playmaker (5.2 APG) despite limited spacing around him", "38.7% from three shows legitimate shooting ability"],
+    concerns: ["Undersized at 190 lbs — needs to add strength", "Efficiency dips against top competition and elite defenses"],
+    jazzFitAnalysis: "Flemings would be a long-term backcourt partner for George. His explosion and passing instincts add a different dimension than what the Jazz currently have. The 38.7% three-point shooting in Houston's spacing-challenged offense suggests even better numbers with Markkanen and Bailey creating room. Would thrive learning behind George and Sexton.",
     comps: ["De'Aaron Fox", "Tyrese Maxey"], projected: "Top 10" },
-  { rank: 7, name: "Darius Acuff Jr.", pos: "PG", school: "Arkansas", height: "6'3\"", age: 19, jazzFit: 7, stars: 4.5,
-    stats: { ppg: 19.3, rpg: 3.8, apg: 4.2 },
-    radar: { Scoring: 78, Playmaking: 68, Defense: 55, Athleticism: 75, Shooting: 65, IQ: 70 },
-    strengths: ["Clutch gene — thrives in big moments", "Scoring versatility across all three levels", "Fearless competitor who never gets rattled"],
-    concerns: ["Turnover-prone in half-court sets", "Defensive engagement inconsistent"],
-    jazzFitAnalysis: "Acuff fits the Jazz's fast-paced identity perfectly. His fearless scoring mentality would give Hardy a microwave option off the bench, and his clutch performances suggest a winner's mentality. Would thrive in Will Hardy's pace-and-space system, attacking off the dribble while JJJ and Markkanen space the floor.",
-    comps: ["Damian Lillard (lite)", "CJ McCollum"], projected: "Top 10" },
-  { rank: 8, name: "Mikel Brown Jr.", pos: "SG", school: "Villanova", height: "6'5\"", age: 19, jazzFit: 8, stars: 4.5,
-    stats: { ppg: 17.8, rpg: 4.4, apg: 3.1 },
-    radar: { Scoring: 72, Playmaking: 58, Defense: 75, Athleticism: 88, Shooting: 55, IQ: 65 },
-    strengths: ["Elite athleticism with explosive finishing", "Defensive motor and switchability", "Improving shooting mechanics"],
-    concerns: ["Shot mechanics need significant work", "Needs offensive refinement and polish"],
-    jazzFitAnalysis: "Brown is the athletic 3-and-D wing the Jazz frontcourt desperately needs. His defensive versatility would allow Hardy to play him alongside Bailey in switchable lineups, and his athleticism creates easy transition points. If the shot develops, he's a perfect complementary piece next to George and Markkanen.",
-    comps: ["Jalen Green", "Anthony Edwards (lite)"], projected: "Top 10" },
-  { rank: 9, name: "Koa Peat", pos: "SF/PF", school: "Arizona", height: "6'8\"", age: 19, jazzFit: 6, stars: 4,
-    stats: { ppg: 14.1, rpg: 5.5, apg: 2.1 },
-    radar: { Scoring: 68, Playmaking: 50, Defense: 70, Athleticism: 72, Shooting: 48, IQ: 65 },
-    strengths: ["Physical bruiser with strong interior scoring", "Tournament standout with big-game performances", "Improving touch around the basket"],
-    concerns: ["Lack of explosion against NBA-sized bigs", "Limited shooting range beyond 15 feet"],
-    jazzFitAnalysis: "Peat would be a power backup behind JJJ, but the positional redundancy is concerning. The Jazz already have Markkanen, JJJ, Filipowski, and Landale in the frontcourt. Unless the Jazz plan to move one of those pieces, Peat's fit is limited despite his talent.",
-    comps: ["Zion Williamson (lite)", "John Collins"], projected: "Top 10" },
-  { rank: 10, name: "Brayden Burries", pos: "SG", school: "Arizona", height: "6'5\"", age: 19, jazzFit: 8, stars: 4,
-    stats: { ppg: 16.1, rpg: 3.8, apg: 2.9 },
-    radar: { Scoring: 75, Playmaking: 58, Defense: 70, Athleticism: 78, Shooting: 68, IQ: 70 },
-    strengths: ["Certified bucket — can score from all three levels", "Off-ball shooting and multi-positional defense", "1.5 steals per game — active hands and instincts"],
-    concerns: ["Older freshman — limited development runway", "Needs to improve as a primary creator"],
-    jazzFitAnalysis: "Burries is the 3-and-D guard the Jazz need next to George. His scoring versatility and defensive activity would fit Hardy's system perfectly. Pair him with George and JJJ for a switchable, shooting-heavy lineup. Immediate rotation contributor.",
+  { rank: 8, name: "Nate Ament", pos: "SF/PF", school: "Tennessee", height: "6'10\"", age: 19, jazzFit: 7, stars: 4,
+    stats: { ppg: 16.7, rpg: 6.3, apg: 2.3 },
+    radar: { Scoring: 68, Playmaking: 55, Defense: 65, Athleticism: 72, Shooting: 62, IQ: 70 },
+    strengths: ["Rare 6'10\" ball-handler with scoring upside — flashed 23.8 PPG stretch", "584 points as a freshman (3rd most in Tennessee history)", "Fluid movement and skill at his size with developing shooting touch"],
+    concerns: ["Knee and ankle injuries interrupted his freshman season", "Consistency outside of hot streaks is a question mark"],
+    jazzFitAnalysis: "Ament's 6'10\" frame with ball-handling skills makes him an intriguing fit next to Markkanen. He could play the 3 or 4 and gives Hardy a versatile forward who can create his own shot. The injury concerns are real, but the upside of a skilled, tall wing who can score in bunches is worth the gamble. Would need time to develop but has starter potential alongside the Jazz core.",
+    comps: ["Tobias Harris", "Kyle Kuzma"], projected: "Lottery" },
+  { rank: 9, name: "Mikel Brown Jr.", pos: "PG", school: "Louisville", height: "6'5\"", age: 20, jazzFit: 8, stars: 4.5,
+    stats: { ppg: 18.2, rpg: 3.3, apg: 4.7 },
+    radar: { Scoring: 78, Playmaking: 72, Defense: 62, Athleticism: 82, Shooting: 62, IQ: 68 },
+    strengths: ["Unstoppable pull-up jumper with positional size at 6'5\"", "Significant offensive talent — ambidextrous finishing and passing", "2.6 three-pointers made per game with improving mechanics"],
+    concerns: ["Persistent back injury limited him to just 21 games", "Shooting efficiency needs improvement (34.4% from three)"],
+    jazzFitAnalysis: "Brown's size at 6'5\" and playmaking ability make him an ideal backcourt fit alongside George. His pull-up game and passing would give Hardy a versatile guard who can create for himself and others. The health concern is the biggest red flag — only 21 games is a small sample. But the talent is undeniable, and if healthy, he's a top-5 caliber player who fell due to injury.",
+    comps: ["Jalen Green", "Anthony Edwards (lite)"], projected: "Lottery" },
+  { rank: 10, name: "Brayden Burries", pos: "SG", school: "Arizona", height: "6'4\"", age: 21, jazzFit: 8, stars: 4,
+    stats: { ppg: 16.1, rpg: 4.9, apg: 2.4 },
+    radar: { Scoring: 72, Playmaking: 55, Defense: 72, Athleticism: 75, Shooting: 68, IQ: 72 },
+    strengths: ["Physical versatile scorer across all three levels — 1.5 SPG", "Led Arizona to Big 12 title and Final Four (39 games)", "Rebounds well for a guard (4.9 RPG) with All-Big 12 honors"],
+    concerns: ["Older prospect at 21 — limited development runway", "Efficiency as a primary creator needs improvement"],
+    jazzFitAnalysis: "Burries is the 3-and-D guard the Jazz need next to George. His scoring versatility, defensive activity (1.5 steals), and winning pedigree (Big 12 champions, Final Four) fit Hardy's system perfectly. He wouldn't need to be the primary option — just defend, shoot open threes, and make winning plays. Immediate rotation contributor from day one.",
     comps: ["Devin Vassell", "Anfernee Simons"], projected: "Lottery" },
-  { rank: 11, name: "Yaxel Lendeborg", pos: "SF/PF", school: "Michigan", height: "6'7\"", age: 20, jazzFit: 7, stars: 4,
+  { rank: 11, name: "Karim Lopez", pos: "SF/PF", school: "NZ Breakers (NBL)", height: "6'9\"", age: 19, jazzFit: 7, stars: 4,
+    stats: { ppg: 11.9, rpg: 6.1, apg: 1.9 },
+    radar: { Scoring: 62, Playmaking: 48, Defense: 65, Athleticism: 72, Shooting: 58, IQ: 65 },
+    strengths: ["Most points by an NBL Next Stars prospect — career-high 32 pts", "Well-rounded 6'9\" forward with positional size and pro experience", "49.4% FG playing against grown men at age 19"],
+    concerns: ["Inconsistent three-point shooting (32.2%) — needs to develop range", "Still raw offensively compared to college peers — lower stats in pro league"],
+    jazzFitAnalysis: "Lopez's pro experience and 6'9\" frame make him an intriguing developmental piece for the Jazz. He's already been tested against professional competition in the NBL, which accelerates his NBA readiness. His versatility at the forward spot fits Hardy's switch-everything scheme. The shooting needs work, but the Jazz's development staff has a track record of improving shooters. Would compete with Hendricks and Bailey for wing minutes.",
+    comps: ["OG Anunoby", "Scottie Barnes (lite)"], projected: "Lottery" },
+  { rank: 12, name: "Yaxel Lendeborg", pos: "PF/SF", school: "Michigan", height: "6'9\"", age: 24, jazzFit: 7, stars: 4,
     stats: { ppg: 15.2, rpg: 6.1, apg: 1.8 },
-    radar: { Scoring: 68, Playmaking: 45, Defense: 78, Athleticism: 75, Shooting: 65, IQ: 68 },
-    strengths: ["7'4\" wingspan enables elite defensive versatility", "NCAA Tournament breakout — 21 PPG, 7.3 RPG, 50% from 3", "Strong frame that guards multiple positions"],
-    concerns: ["Consistency outside tournament stretches", "Offensive creation still limited"],
-    jazzFitAnalysis: "Lendeborg's wingspan and defensive switchability are tailor-made for Hardy's scheme. His tournament breakout showed scoring upside that was hidden during the regular season. The size and shooting combo at 6'7\" with a 7'4\" wingspan is rare.",
+    radar: { Scoring: 68, Playmaking: 45, Defense: 80, Athleticism: 75, Shooting: 65, IQ: 75 },
+    strengths: ["7'4\" wingspan — elite defensive versatility across multiple positions", "National champion with Michigan — tournament breakout performer", "Most NBA-ready player in the class — polished on both ends"],
+    concerns: ["Will be 24 as a rookie — severely limited development runway", "Offensive creation still limited — role player ceiling"],
+    jazzFitAnalysis: "Lendeborg's 7'4\" wingspan and defensive switchability are tailor-made for Hardy's scheme. As a national champion, he brings a winning mentality and maturity the Jazz need. His shooting has improved and he can guard 1-through-4. The age (24) limits his ceiling, but the floor is extremely high — an instant rotation defender who can contribute from day one alongside Markkanen and Bailey.",
     comps: ["OG Anunoby", "Mikal Bridges"], projected: "Lottery" },
-  { rank: 12, name: "Nikolas Khamenia", pos: "SF/PF", school: "Duke", height: "6'8\"", age: 19, jazzFit: 7, stars: 4,
-    stats: { ppg: 7.4, rpg: 4.0, apg: 2.6 },
-    radar: { Scoring: 55, Playmaking: 62, Defense: 70, Athleticism: 60, Shooting: 72, IQ: 82 },
-    strengths: ["Polished and mature freshman — advanced skill level", "Shooting touch with 43.5% from 3", "Elite feel, decision-making, and basketball IQ"],
-    concerns: ["Limited role at Duke — stats don't show full ability", "Not an explosive athlete"],
-    jazzFitAnalysis: "Khamenia is a high-IQ wing who would thrive in Hardy's system. His shooting and passing would complement George and Markkanen. The stats are misleading — his per-36 numbers and efficiency are much stronger. A smart, low-ego player who makes everyone better.",
-    comps: ["Kyle Anderson", "Boris Diaw"], projected: "Lottery" },
-  { rank: 13, name: "Hannes Steinbach", pos: "PF/C", school: "Washington", height: "6'10\"", age: 19, jazzFit: 7, stars: 4,
-    stats: { ppg: 18.6, rpg: 11.6, apg: 1.5 },
-    radar: { Scoring: 65, Playmaking: 42, Defense: 68, Athleticism: 60, Shooting: 55, IQ: 72 },
-    strengths: ["Elite rebounding instincts and positioning", "Highly dependable production every night", "Strong motor that never quits"],
-    concerns: ["Athletic limitations could be exploited in NBA", "Middling Washington competition raises questions"],
-    jazzFitAnalysis: "Steinbach could grow into a Kessler backup with more offensive versatility. His rebounding and consistency are valuable, and his motor fits the Jazz culture. A safe, high-floor pick who could contribute rotation minutes within two years.",
-    comps: ["Jonas Valanciunas", "Ivica Zubac"], projected: "Lottery" },
-  { rank: 14, name: "Tyler Tanner", pos: "SG", school: "Vanderbilt", height: "6'5\"", age: 20, jazzFit: 8, stars: 4,
-    stats: { ppg: 20.1, rpg: 4.8, apg: 3.6 },
-    radar: { Scoring: 78, Playmaking: 62, Defense: 58, Athleticism: 68, Shooting: 78, IQ: 72 },
-    strengths: ["Elite shot creation from mid-range", "Improved three-point shooting as a sophomore", "Veteran-ready skill set"],
-    concerns: ["Age concern as a sophomore (20)", "Athleticism ceiling questions at NBA level"],
-    jazzFitAnalysis: "Tanner is a veteran-ready backup SG who could contribute immediately. His shot creation and mid-range mastery give Hardy an instant-offense option off the bench, and his improved three-point shooting spaces the floor. Could push Sensabaugh for minutes right away.",
-    comps: ["DeMar DeRozan (lite)", "Tyler Herro"], projected: "Lottery" },
-  { rank: 15, name: "Cameron Carr", pos: "SF", school: "Baylor", height: "6'7\"", age: 20, jazzFit: 8, stars: 4,
-    stats: { ppg: 17.4, rpg: 5.9, apg: 2.7 },
-    radar: { Scoring: 72, Playmaking: 55, Defense: 65, Athleticism: 70, Shooting: 85, IQ: 72 },
-    strengths: ["Elite movement shooting (41.7% catch-and-shoot 3s)", "Strong finishing ability around the basket", "Smart, heady player who makes winning plays"],
-    concerns: ["Not a primary creator — needs structure", "Needs to add strength for wing position"],
-    jazzFitAnalysis: "Carr is an elite floor-spacer who would be ideal for the Jazz's ball-movement system. His catch-and-shoot numbers are outstanding, and his basketball IQ means he rarely makes mistakes. In a lineup with George, Markkanen, and JJJ creating, Carr would feast on open looks.",
-    comps: ["Joe Harris", "Duncan Robinson (with defense)"], projected: "Lottery" },
-  { rank: 16, name: "Thomas Haugh", pos: "SF/PF", school: "Florida", height: "6'9\"", age: 22, jazzFit: 7, stars: 3.5,
-    stats: { ppg: 17.2, rpg: 6.6, apg: 2.3 },
-    radar: { Scoring: 65, Playmaking: 55, Defense: 72, Athleticism: 65, Shooting: 50, IQ: 75 },
-    strengths: ["Positional size at 6'9\" for wing/forward", "Ball-moving instincts and team-first approach", "Versatile defender who can guard 2-4"],
-    concerns: ["Average shooting profile (32% from three)", "Older prospect at 22 — limited development runway"],
-    jazzFitAnalysis: "Haugh is an immediate rotation contributor. His versatility, defense, and selfless play style fit perfectly in Hardy's system. He wouldn't need touches — just defend, rebound, and make the simple play. The shooting concerns are real but manageable with Jazz's shooting-development track record.",
-    comps: ["Grant Williams", "Aaron Gordon (lite)"], projected: "Mid First" },
-  { rank: 17, name: "Labaron Philon", pos: "PG", school: "Alabama", height: "6'3\"", age: 20, jazzFit: 7, stars: 4,
-    stats: { ppg: 19.6, rpg: 4.1, apg: 5.2 },
-    radar: { Scoring: 75, Playmaking: 72, Defense: 55, Athleticism: 80, Shooting: 58, IQ: 65 },
-    strengths: ["Explosive burst and rim-finishing ability", "Improving shooting mechanics", "SEC-tested toughness and competitiveness"],
-    concerns: ["Shot mechanics still inconsistent", "Decision-making at full speed needs work"],
-    jazzFitAnalysis: "Philon is a backup PG with serious upside who would push Collier for minutes immediately. His explosion and scoring ability off the bench would give Hardy a change-of-pace option. In the Jazz's up-tempo system, Philon's transition game would shine.",
+  { rank: 13, name: "Aday Mara", pos: "C", school: "Michigan", height: "7'3\"", age: 21, jazzFit: 5, stars: 4,
+    stats: { ppg: 12.1, rpg: 6.8, apg: 2.4 },
+    radar: { Scoring: 52, Playmaking: 55, Defense: 82, Athleticism: 55, Shooting: 38, IQ: 75 },
+    strengths: ["7'3\" with unusual skill — Big Ten DPOY and excellent passer for size", "National champion with Michigan — 66.8% FG with elite shot-blocking", "Quick processor who makes reads and swat-shot timing others can't"],
+    concerns: ["Can't shoot — below 60% from the free throw line", "Lateral quickness against NBA guards is a real concern"],
+    jazzFitAnalysis: "With Kessler already providing elite rim protection, Mara is mostly redundant. His passing ability separates him from Kessler, but the Jazz don't need two non-shooting centers. Only makes sense if Utah plans to trade Kessler and wants a more versatile replacement. The national championship experience and DPOY award show high-level production, but the fit isn't there currently.",
+    comps: ["Brook Lopez", "Kristaps Porzingis (lite)"], projected: "Lottery" },
+  { rank: 14, name: "Ebuka Okorie", pos: "PG/SG", school: "Stanford", height: "6'2\"", age: 19, jazzFit: 7, stars: 4,
+    stats: { ppg: 23.2, rpg: 3.6, apg: 3.6 },
+    radar: { Scoring: 85, Playmaking: 62, Defense: 55, Athleticism: 88, Shooting: 65, IQ: 68 },
+    strengths: ["Best driving guard in the class — ACC scoring leader (23.2 PPG) as freshman", "Tight handle with sudden speed changes — elite at getting to the rim", "8 games with 30+ points broke ACC freshman record (set by Marvin Bagley III)"],
+    concerns: ["Undersized at 6'2\" — durability against bigger NBA guards", "Limited playmaking for others (3.6 APG) — scorer-first mentality"],
+    jazzFitAnalysis: "Okorie's explosive scoring (23.2 PPG) would give the Jazz a microwave guard off the bench who can create his own shot in crunch time. His driving ability and burst would complement George's size and shooting. The concern is whether a 6'2\" guard fits Hardy's switch-everything defense — he'd be a target. But the offensive talent is undeniable, and his ACC scoring title as a freshman shows elite production.",
+    comps: ["Jalen Brunson", "Kyrie Irving (lite)"], projected: "Mid First" },
+  { rank: 15, name: "Hannes Steinbach", pos: "PF/C", school: "Washington", height: "6'11\"", age: 20, jazzFit: 7, stars: 4,
+    stats: { ppg: 18.5, rpg: 11.8, apg: 1.6 },
+    radar: { Scoring: 68, Playmaking: 42, Defense: 70, Athleticism: 62, Shooting: 60, IQ: 72 },
+    strengths: ["Big Ten freshman record with 21 double-doubles — 57.7% FG", "Dependable production every night with 18.5 PPG and 11.8 RPG", "Showed three-point range (34%) and 1.2 blocks per game"],
+    concerns: ["Athletic limitations could be exploited in NBA pick-and-roll", "Modern tweener concerns — not quite center-sized for NBA"],
+    jazzFitAnalysis: "Steinbach's double-double machine production would complement Kessler as a stretch option at the 4/5. His 34% three-point shooting is better than Wilson's and fits the Jazz spacing philosophy. His motor and rebounding fit Hardy's culture. The 21 double-doubles in one season show consistency the Jazz need. A safe, high-floor pick who contributes rotation minutes immediately.",
+    comps: ["Jonas Valanciunas", "Nikola Vucevic"], projected: "Mid First" },
+  { rank: 16, name: "Labaron Philon Jr.", pos: "PG/SG", school: "Alabama", height: "6'4\"", age: 20, jazzFit: 7, stars: 4,
+    stats: { ppg: 22.0, rpg: 3.5, apg: 5.0 },
+    radar: { Scoring: 82, Playmaking: 72, Defense: 58, Athleticism: 80, Shooting: 75, IQ: 68 },
+    strengths: ["Only D-I player to avg 22 PPG and 5 APG on 50.1% FG", "Buttery floaters and shifty ball-handling — nearly 40% from three", "Career-high 35 points in NCAA tournament — big-game performer"],
+    concerns: ["Slight frame under 180 lbs — needs to add significant muscle", "Decision-making at full speed leads to turnovers"],
+    jazzFitAnalysis: "Philon's scoring explosion as a sophomore (22 PPG on 50% FG) makes him an intriguing backcourt piece. His ability to both score and distribute (5 APG) would push Sexton for minutes immediately. In Hardy's uptempo system, Philon's transition game and floater package would be devastating. The frame concern is real but manageable with an NBA strength program.",
     comps: ["Ja Morant (lite)", "Russell Westbrook (lite)"], projected: "Mid First" },
-  { rank: 18, name: "Patrick Ngongba", pos: "C", school: "Duke", height: "6'11\"", age: 20, jazzFit: 6, stars: 3.5,
-    stats: { ppg: 12.3, rpg: 8.7, apg: 1.2 },
-    radar: { Scoring: 45, Playmaking: 35, Defense: 80, Athleticism: 75, Shooting: 28, IQ: 60 },
-    strengths: ["Elite shot-blocking and rim protection", "Incredible length and wingspan", "Breakout healthy season at Duke"],
-    concerns: ["Limited offensive repertoire", "Health history and durability questions"],
-    jazzFitAnalysis: "With Kessler already providing elite rim protection, Ngongba is redundant. Third-string center depth isn't worth a first-round pick unless the Jazz are willing to move Kessler. The talent is real but the fit isn't there.",
-    comps: ["Robert Williams III", "Myles Turner (lite)"], projected: "Mid First" },
-  { rank: 19, name: "Braylon Mullins", pos: "SG", school: "UConn", height: "6'5\"", age: 19, jazzFit: 8, stars: 4,
-    stats: { ppg: 12.0, rpg: 3.5, apg: 1.4 },
-    radar: { Scoring: 60, Playmaking: 42, Defense: 62, Athleticism: 65, Shooting: 90, IQ: 68 },
-    strengths: ["Off-ball gravity and shooting pull elite defenders", "Catch-and-shoot mastery from deep", "Winning culture background at UConn"],
-    concerns: ["Not a self-creator off the dribble", "Limited scoring when shots aren't falling"],
-    jazzFitAnalysis: "Mullins is a perfect 3-and-D role player for the Jazz. Plug him next to George and let him shoot — he'd feast on the open looks created by Markkanen and JJJ's spacing. His UConn pedigree means he knows how to win and can handle pressure moments.",
-    comps: ["Seth Curry", "Buddy Hield"], projected: "Mid First" },
-  { rank: 20, name: "Amari Allen", pos: "SF", school: "Alabama", height: "6'7\"", age: 19, jazzFit: 7, stars: 3.5,
-    stats: { ppg: 14.8, rpg: 6.2, apg: 2.0 },
-    radar: { Scoring: 58, Playmaking: 45, Defense: 70, Athleticism: 82, Shooting: 52, IQ: 60 },
-    strengths: ["Athletic and switchable defender", "Emerging three-point shot with good form", "High-upside freshman with room to grow"],
-    concerns: ["Still raw offensively — limited self-creation", "Consistency from game to game"],
-    jazzFitAnalysis: "Allen is a long-term wing depth piece with 3-and-D upside. His athleticism and defensive versatility fit the Jazz's switch-everything approach, and his shooting trajectory is encouraging. Would need time to develop but has starter potential.",
-    comps: ["OG Anunoby (lite)", "Josh Okogie"], projected: "Mid First" },
-  { rank: 21, name: "Killyan Toure", pos: "SF/PF", school: "Iowa State", height: "6'9\"", age: 19, jazzFit: 6, stars: 3.5,
-    stats: { ppg: 13.4, rpg: 7.1, apg: 1.9 },
-    radar: { Scoring: 55, Playmaking: 48, Defense: 62, Athleticism: 68, Shooting: 50, IQ: 60 },
-    strengths: ["Positional versatility as a combo forward", "Improving motor and effort level", "Stretch-4 potential with developing shot"],
-    concerns: ["Inconsistent production game-to-game", "Needs polish on both ends of the floor"],
-    jazzFitAnalysis: "Toure's versatility is intriguing but the Jazz already have plenty of combo forwards. His stretch-4 potential is interesting but unproven. A depth piece who could develop into a rotation player but unlikely to crack the Jazz's current frontcourt.",
-    comps: ["Jerami Grant (lite)", "Kelly Oubre Jr."], projected: "Late First" },
-  { rank: 22, name: "Bennett Stirtz", pos: "PG", school: "Iowa", height: "6'3\"", age: 23, jazzFit: 7, stars: 3.5,
-    stats: { ppg: 19.8, rpg: 2.6, apg: 4.4 },
-    radar: { Scoring: 72, Playmaking: 70, Defense: 55, Athleticism: 58, Shooting: 78, IQ: 80 },
-    strengths: ["Elite perimeter shooter (36% from 3)", "Poise and game management — led Iowa to Elite Eight", "Savvy pick-and-roll operator with high IQ"],
-    concerns: ["Older prospect (23) limits upside ceiling", "Not the quickest — struggles with separation"],
-    jazzFitAnalysis: "Stirtz is a plug-and-play backup PG who can space the floor alongside George. His shooting and poise would be valuable in Hardy's half-court offense. The age limits his ceiling but the floor is high — a reliable rotation guard from day one.",
-    comps: ["Malcolm Brogdon", "Fred VanVleet"], projected: "Late First" },
-  { rank: 23, name: "Brayden Ament", pos: "PG", school: "Creighton", height: "6'1\"", age: 20, jazzFit: 7, stars: 3.5,
-    stats: { ppg: 16.2, rpg: 3.5, apg: 6.8 },
-    radar: { Scoring: 65, Playmaking: 82, Defense: 58, Athleticism: 65, Shooting: 62, IQ: 78 },
-    strengths: ["Elite court vision and passing instincts", "Competitive spirit and leadership", "Improving perimeter shot"],
-    concerns: ["Undersized for the position at 6'1\"", "Defensive limitations against bigger guards"],
-    jazzFitAnalysis: "Ament is a pure point guard who could back up George or play alongside him. His passing and vision would add another dimension to the Jazz's offense. Size is a concern but his competitiveness partially offsets it.",
-    comps: ["Tyus Jones", "TJ McConnell"], projected: "Late First" },
-  { rank: 24, name: "Christian Anderson", pos: "PG", school: "Texas Tech", height: "6'3\"", age: 20, jazzFit: 8, stars: 3.5,
-    stats: { ppg: 18.5, rpg: 3.6, apg: 7.4 },
-    radar: { Scoring: 72, Playmaking: 78, Defense: 65, Athleticism: 65, Shooting: 75, IQ: 78 },
-    strengths: ["Best pick-and-roll guard in the class", "Elite shooter — 42% from three on volume", "Scrappy defender with high motor"],
-    concerns: ["Among the smallest first-round guards", "Finishing at the rim against length"],
-    jazzFitAnalysis: "Anderson is a ready-made rotation PG who complements George perfectly. His shooting and playmaking are exactly what the Jazz need, and his maturity means he can contribute immediately. Named Big 12 Most Improved and All-American.",
-    comps: ["Malcolm Brogdon", "Derrick White"], projected: "Late First" },
-  { rank: 25, name: "Dailyn Swain", pos: "SG/SF", school: "Texas", height: "6'6\"", age: 21, jazzFit: 7, stars: 3.5,
-    stats: { ppg: 15.8, rpg: 5.2, apg: 2.4 },
-    radar: { Scoring: 62, Playmaking: 50, Defense: 75, Athleticism: 78, Shooting: 58, IQ: 65 },
-    strengths: ["Toolsy wing with improving three-point shot (35%)", "Plus positional defender with frame and agility", "Led Texas to Sweet 16 — winning pedigree"],
-    concerns: ["Shot creation still developing", "Needs to become more consistent from three"],
-    jazzFitAnalysis: "Swain fits as a defensive wing who can guard multiple positions in Hardy's switch scheme. His shooting improvement this season is encouraging. A 3-and-D wing who could earn rotation minutes quickly.",
-    comps: ["Herbert Jones", "Cam Johnson (lite)"], projected: "Late First" },
-  { rank: 26, name: "Morez Johnson Jr.", pos: "PF/C", school: "Michigan", height: "6'9\"", age: 20, jazzFit: 6, stars: 3.5,
+  { rank: 17, name: "Chris Cenac Jr.", pos: "PF/C", school: "Houston", height: "6'11\"", age: 19, jazzFit: 6, stars: 4,
+    stats: { ppg: 9.5, rpg: 7.9, apg: 1.0 },
+    radar: { Scoring: 48, Playmaking: 38, Defense: 72, Athleticism: 75, Shooting: 55, IQ: 62 },
+    strengths: ["Fluid 6'11\" big with stretch potential — 33.3% from three as freshman", "NCAA tournament breakout: averaged 10/12.3 over 3 games", "Houston's highest-ranked recruit ever — elite physical tools"],
+    concerns: ["Low scoring average (9.5 PPG) despite starting 36 of 37 games", "Still developing physically — needs time in an NBA program"],
+    jazzFitAnalysis: "Cenac's stretch potential at 6'11\" with 33.3% three-point shooting is intriguing as a long-term Kessler complement. Unlike Kessler, Cenac can space the floor, which opens up driving lanes for George and Bailey. His tournament breakout showed a higher ceiling. The Jazz frontcourt is crowded, but Cenac's shooting separates him from the other bigs on the roster. A patient developmental pick.",
+    comps: ["Al Horford (lite)", "Jaren Jackson Jr. (lite)"], projected: "Mid First" },
+  { rank: 18, name: "Dailyn Swain", pos: "SG/SF", school: "Texas", height: "6'8\"", age: 21, jazzFit: 7, stars: 4,
+    stats: { ppg: 17.3, rpg: 7.5, apg: 3.6 },
+    radar: { Scoring: 72, Playmaking: 58, Defense: 72, Athleticism: 80, Shooting: 55, IQ: 68 },
+    strengths: ["Most efficient isolation scorer in the country — 54.2% FG", "Versatile 6'8\" wing with elite rebounding (7.5 RPG) and passing (3.6 APG)", "Relentless at the rim with NBA-ready strength and frame"],
+    concerns: ["Jump shot mechanics need serious work (34.4% from three)", "Shot creation inconsistent outside the paint — needs to develop range"],
+    jazzFitAnalysis: "Swain's 6'8\" frame and rebounding would give the Jazz a physical wing who does everything except shoot. His 54.2% FG and 7.5 RPG show elite efficiency inside. The shooting concern (34.4%) is problematic in Hardy's spacing system, but his passing (3.6 APG) and defensive versatility partially compensate. Would compete with Bailey for minutes at the 3.",
+    comps: ["Herbert Jones", "Cam Johnson (lite)"], projected: "Mid First" },
+  { rank: 19, name: "Cameron Carr", pos: "SG/SF", school: "Baylor", height: "6'5\"", age: 20, jazzFit: 8, stars: 4,
+    stats: { ppg: 18.9, rpg: 5.8, apg: 2.6 },
+    radar: { Scoring: 75, Playmaking: 55, Defense: 65, Athleticism: 70, Shooting: 82, IQ: 72 },
+    strengths: ["37% from three on high volume — Baylor sophomore scoring record (642 points)", "Strong finishing with 49% FG — scores from all three levels", "Smart, heady player who makes winning plays and reads defenses"],
+    concerns: ["Light frame at 175 lbs needs significant muscle for NBA", "Not a primary creator — needs structure and ball-dominant teammates"],
+    jazzFitAnalysis: "Carr is an elite floor-spacer who would thrive in Hardy's ball-movement system. His 37% from three and 49% FG make him one of the most efficient scorers in the class. In a lineup with George, Markkanen, and Bailey creating, Carr would feast on open looks. His basketball IQ means he rarely makes mistakes. A perfect complementary piece — ready to contribute rotation minutes immediately.",
+    comps: ["Duncan Robinson (with defense)", "Joe Harris"], projected: "Mid First" },
+  { rank: 20, name: "Allen Graves", pos: "SF/PF", school: "Santa Clara", height: "6'9\"", age: 19, jazzFit: 7, stars: 3.5,
+    stats: { ppg: 11.8, rpg: 6.5, apg: 1.9 },
+    radar: { Scoring: 58, Playmaking: 52, Defense: 65, Athleticism: 70, Shooting: 80, IQ: 72 },
+    strengths: ["Elite efficiency — 51.2% FG and 41.3% from three off the bench", "WCC Freshman of the Year + Sixth Man of the Year (rare double)", "Point forward skills at 6'9\" with program-record 67 steals"],
+    concerns: ["Came off the bench — limited minutes and production (11.8 PPG)", "WCC competition level raises NBA translation questions"],
+    jazzFitAnalysis: "Graves is an intriguing point forward who can shoot (41.3% from 3), pass, and defend at 6'9\". His efficiency numbers are elite despite coming off the bench. The Jazz could use his versatility as a swiss-army-knife wing who can play multiple positions in Hardy's system. The competition level concern is real, but his skill set translates. A high-IQ role player who makes everyone around him better.",
+    comps: ["Kyle Anderson", "Boris Diaw"], projected: "Mid First" },
+  { rank: 21, name: "Morez Johnson Jr.", pos: "PF/C", school: "Michigan", height: "6'9\"", age: 20, jazzFit: 6, stars: 3.5,
     stats: { ppg: 14.2, rpg: 7.8, apg: 1.5 },
-    radar: { Scoring: 55, Playmaking: 40, Defense: 72, Athleticism: 75, Shooting: 40, IQ: 65 },
-    strengths: ["Physical and tough — does the dirty work", "Strong frame with 7'2\" wingspan", "Rim-running, lobs, putbacks — efficient finisher"],
-    concerns: ["Limited perimeter shooting", "Not a primary creator or passer"],
-    jazzFitAnalysis: "Johnson brings toughness and physicality the Jazz could use. His defensive projection and finishing ability would complement the shooting around him. Could develop into a Kessler alternative with more offensive upside.",
-    comps: ["Aaron Gordon (lite)", "Robert Williams III"], projected: "Late First" },
-  { rank: 27, name: "Aday Mara", pos: "C", school: "International", height: "7'2\"", age: 20, jazzFit: 5, stars: 3.5,
-    stats: { ppg: 10.8, rpg: 5.4, apg: 1.2 },
-    radar: { Scoring: 52, Playmaking: 38, Defense: 70, Athleticism: 58, Shooting: 55, IQ: 62 },
-    strengths: ["True 7'2\" with soft touch around the rim", "Shot-blocking presence and rim deterrence", "Improving face-up game and mid-range shot"],
-    concerns: ["Lateral quickness against NBA guards", "Still adapting to physical NBA-style play"],
-    jazzFitAnalysis: "Mara is a project center behind Kessler and JJJ. His size is intriguing but the Jazz frontcourt is crowded. Only worth it if the Jazz view him as a long-term Kessler successor or plan to move frontcourt pieces.",
-    comps: ["Kristaps Porzingis (lite)", "Brook Lopez"], projected: "Late First" },
+    radar: { Scoring: 55, Playmaking: 40, Defense: 75, Athleticism: 78, Shooting: 40, IQ: 68 },
+    strengths: ["National champion — championship connective tissue and all-tournament team", "Physical 250-lb wrecking ball with 7'2\" wingspan", "Defensive versatility and rim-running — efficient finisher"],
+    concerns: ["Limited perimeter shooting — can't space the floor", "Not quite center-sized at 6'9\" — tweener concerns"],
+    jazzFitAnalysis: "Johnson brings toughness and championship pedigree the Jazz could use. His defensive versatility and physicality would complement Markkanen's finesse game. Could develop into a Kessler alternative with more offensive versatility. The shooting limitations are a concern in Hardy's spacing system, but his energy and defensive activity off the bench have value.",
+    comps: ["Aaron Gordon (lite)", "Robert Williams III"], projected: "Mid First" },
+  { rank: 22, name: "Bennett Stirtz", pos: "PG", school: "Iowa", height: "6'4\"", age: 23, jazzFit: 7, stars: 3.5,
+    stats: { ppg: 19.8, rpg: 2.6, apg: 4.4 },
+    radar: { Scoring: 75, Playmaking: 72, Defense: 55, Athleticism: 58, Shooting: 78, IQ: 82 },
+    strengths: ["First Hawkeye ever with 700+ pts, 100+ ast, 50+ stl in one season", "Elite game management and pump-fake mastery (47.7/35.8/84.8 splits)", "Savvy pick-and-roll operator who led team in scoring, assists, and steals"],
+    concerns: ["Oldest prospect in the class (23) — severely limited ceiling", "Not the quickest — struggles creating separation against elite athletes"],
+    jazzFitAnalysis: "Stirtz is a plug-and-play backup PG who can contribute from day one. His shooting (35.8% from three), playmaking (4.4 APG), and defensive activity (1.4 SPG) fit Hardy's system perfectly. The age limits his ceiling, but the floor is among the highest in the class. Would push Sexton for backup minutes behind George immediately.",
+    comps: ["Malcolm Brogdon", "Fred VanVleet"], projected: "Late First" },
+  { rank: 23, name: "Tyler Tanner", pos: "PG/SG", school: "Vanderbilt", height: "6'0\"", age: 20, jazzFit: 7, stars: 4,
+    stats: { ppg: 19.5, rpg: 3.6, apg: 5.1 },
+    radar: { Scoring: 78, Playmaking: 72, Defense: 62, Athleticism: 70, Shooting: 75, IQ: 75 },
+    strengths: ["First-team All-SEC as a sophomore — 48.5% FG with elite shot creation", "4th in the country in steals (86) — disruptive defender despite size", "Dynamic scorer and playmaker averaging 19.5 PPG and 5.1 APG"],
+    concerns: ["Height at 6'0\" — major durability and matchup concern at NBA level", "Size limits defensive ceiling against bigger guards"],
+    jazzFitAnalysis: "Tanner's production (19.5/5.1) and steal rate are impressive, but the 6'0\" frame is a real concern for Hardy's switch-everything defense. He'd be a target on switches. However, his scoring ability and playmaking off the bench would give the Jazz an instant-offense guard. Could thrive in a Sexton-like role as a microwave scorer. The steal numbers suggest an engaged defender despite the size limitations.",
+    comps: ["Tyler Herro", "DeMar DeRozan (lite)"], projected: "Late First" },
+  { rank: 24, name: "Meleek Thomas", pos: "SG", school: "Arkansas", height: "6'5\"", age: 19, jazzFit: 8, stars: 4,
+    stats: { ppg: 15.6, rpg: 3.8, apg: 2.5 },
+    radar: { Scoring: 68, Playmaking: 50, Defense: 58, Athleticism: 72, Shooting: 85, IQ: 65 },
+    strengths: ["Lethal three-point shooter — 41.6% from deep with confidence", "Led Arkansas in FT% (84.3%) and steals (57) — reliable and active", "Legit NBA-ready shooting at 6'5\" with size for the position"],
+    concerns: ["Hero-ball shot selection at times — can force difficult looks", "Limited rim access and finishing through contact"],
+    jazzFitAnalysis: "Thomas is a plug-and-play 3-and-D wing for the Jazz. His 41.6% three-point shooting would immediately space the floor for George, Markkanen, and Bailey. At 6'5\", he has the size to defend 2s and small 3s in Hardy's switch scheme. He wouldn't need to create — just catch and shoot. The Jazz's shooting-heavy system is the perfect environment for his skill set.",
+    comps: ["Buddy Hield", "Seth Curry"], projected: "Late First" },
+  { rank: 25, name: "Koa Peat", pos: "SF/PF", school: "Arizona", height: "6'8\"", age: 19, jazzFit: 6, stars: 4,
+    stats: { ppg: 14.1, rpg: 5.6, apg: 2.6 },
+    radar: { Scoring: 65, Playmaking: 50, Defense: 68, Athleticism: 78, Shooting: 42, IQ: 65 },
+    strengths: ["30-point debut vs #3 Florida — explosive big-game performer", "Led Arizona to Big 12 regular season + tournament titles (52.8% FG)", "Physical bruiser with strong interior scoring and rebounding"],
+    concerns: ["No three-point range — can't space the floor from outside", "Limited self-creation — scoring drops against set defenses"],
+    jazzFitAnalysis: "Peat's lack of shooting is a dealbreaker in Hardy's spacing system. With Markkanen, Hendricks, and Kessler already in the frontcourt, the Jazz don't need another non-shooting big. His physical game and Big 12 championship pedigree are impressive, but the positional redundancy makes this a poor fit. Only makes sense if the Jazz plan significant roster turnover.",
+    comps: ["Zion Williamson (lite)", "John Collins"], projected: "Late First" },
+  { rank: 26, name: "Christian Anderson", pos: "PG", school: "Texas Tech", height: "6'3\"", age: 20, jazzFit: 8, stars: 3.5,
+    stats: { ppg: 18.5, rpg: 3.0, apg: 7.4 },
+    radar: { Scoring: 72, Playmaking: 82, Defense: 65, Athleticism: 65, Shooting: 82, IQ: 80 },
+    strengths: ["All-American — led Big 12 in assists (7.4 APG, 5th nationally)", "41.5% from three with 108 triples (2nd most in Texas Tech history)", "Set Texas Tech single-season record with 244 total assists"],
+    concerns: ["Small stature at 6'3\" for NBA guard position", "Finishing at rim against NBA length could be a challenge"],
+    jazzFitAnalysis: "Anderson is a ready-made rotation PG who complements George perfectly. His 41.5% three-point shooting and 7.4 assists per game are exactly what the Jazz need — a secondary creator who spaces the floor and runs the pick-and-roll. His maturity and production suggest immediate contribution. In Hardy's system, Anderson would thrive as a backup PG who can also play alongside George in two-PG lineups.",
+    comps: ["Malcolm Brogdon", "Derrick White"], projected: "Late First" },
+  { rank: 27, name: "Amari Allen", pos: "SF", school: "Alabama", height: "6'7\"", age: 19, jazzFit: 7, stars: 3.5,
+    stats: { ppg: 11.4, rpg: 6.9, apg: 3.1 },
+    radar: { Scoring: 55, Playmaking: 55, Defense: 72, Athleticism: 78, Shooting: 55, IQ: 62 },
+    strengths: ["Does a little bit of everything — fills stat sheet (11.4/6.9/3.1)", "Defensive versatility at 6'7\" with SEC All-Freshman honors", "Three-time SEC Freshman of the Week — flashes high-end potential"],
+    concerns: ["Limited star-flash ceiling — role player projection", "Shooting inconsistency (34.1% from three) needs improvement"],
+    jazzFitAnalysis: "Allen is a long-term wing depth piece with 3-and-D upside. His 6.9 rebounds and 3.1 assists from the wing show a well-rounded game that fits Hardy's system. His athleticism and defensive versatility match the Jazz's switch-everything approach. The shooting needs to improve, but the overall package of a versatile freshman wing with room to grow is appealing as a late first-round pick.",
+    comps: ["OG Anunoby (lite)", "Josh Okogie"], projected: "Late First" },
   { rank: 28, name: "Alex Karaban", pos: "SF/PF", school: "UConn", height: "6'8\"", age: 22, jazzFit: 7, stars: 3.5,
     stats: { ppg: 15.1, rpg: 5.8, apg: 2.3 },
     radar: { Scoring: 62, Playmaking: 52, Defense: 70, Athleticism: 65, Shooting: 72, IQ: 78 },
-    strengths: ["Two-time national champion — ultimate winner", "Versatile defender who can switch 2-4", "Reliable three-point shooter with NBA range"],
-    concerns: ["Older prospect — limited upside ceiling", "Not an elite athlete by NBA standards"],
-    jazzFitAnalysis: "Karaban is the highest-floor player in the class. His shooting, defense, and winning experience make him an instant rotation player. The Jazz's system would maximize his strengths. Low ceiling but very high floor.",
+    strengths: ["Two-time national champion — ultimate winner and culture piece", "Versatile defender who can switch 2-through-4 positions", "Reliable three-point shooter with NBA range and winning experience"],
+    concerns: ["Older prospect at 22 — limited upside ceiling", "Not an elite athlete by NBA standards — lower physical ceiling"],
+    jazzFitAnalysis: "Karaban is the highest-floor player in the class. His shooting, defense, and winning experience (two titles at UConn) make him an instant rotation player. Hardy's system would maximize his strengths as a stretch-4 who can defend multiple positions. Low ceiling but very high floor — the kind of player who makes good teams better.",
     comps: ["Dillon Brooks", "PJ Tucker"], projected: "Late First" },
-  { rank: 29, name: "Joshua Jefferson", pos: "SF/PF", school: "Iowa State", height: "6'8\"", age: 21, jazzFit: 7, stars: 3,
-    stats: { ppg: 13.5, rpg: 6.2, apg: 3.1 },
-    radar: { Scoring: 55, Playmaking: 60, Defense: 72, Athleticism: 68, Shooting: 52, IQ: 82 },
-    strengths: ["Highest basketball IQ in college basketball", "Do-it-all wing who impacts winning", "Improving perimeter shot — showing growth"],
-    concerns: ["Shot was a major weakness until recently", "Not an elite scorer or creator"],
-    jazzFitAnalysis: "Jefferson's brain is his superpower — he thinks the game faster than anyone. His versatility and IQ would make Hardy's life easy. If the shot continues developing, he's a steal at this range.",
-    comps: ["Draymond Green (lite)", "Kyle Anderson"], projected: "Late First" }
+  { rank: 29, name: "Jayden Quaintance", pos: "C", school: "Kentucky", height: "6'10\"", age: 20, jazzFit: 5, stars: 3.5,
+    stats: { ppg: 10.2, rpg: 7.5, apg: 0.8 },
+    radar: { Scoring: 48, Playmaking: 35, Defense: 78, Athleticism: 82, Shooting: 32, IQ: 58 },
+    strengths: ["Elite physicality and defensive upside — above-rim finisher", "Shot-blocking and rim protection with NBA frame", "Stout rim protector who competes hard on every possession"],
+    concerns: ["Health questions limited his availability at Kentucky", "Offensive game is extremely raw — no shooting or creation ability"],
+    jazzFitAnalysis: "With Kessler entrenched as the starting center, Quaintance is redundant. Another non-shooting rim protector doesn't move the needle for the Jazz. His physical tools are impressive, but the Jazz need scorers and shooters, not more shot-blocking depth. Only makes sense if Kessler is traded and the Jazz need a long-term replacement.",
+    comps: ["Robert Williams III", "Clint Capela"], projected: "Late First" }
 ];
 
 // ============================================================
-// DATA: DRAFT SIMULATOR
+// DATA: DRAFT SIMULATOR — ACTUAL 2026 LOTTERY RESULTS
 // ============================================================
-// Lottery teams with real 2026 odds (percentage chance at #1 pick)
-// Based on inverse record — worst record = best odds
-// 2025-26 lottery teams — end-of-regular-season data
-// Sources: tankathon.com, basketball-reference.com, cbssports.com
+// Official 2026 NBA Draft Lottery results (May 10, 2026)
+// Sources: nba.com, espn.com, cbssports.com
+// preLotterySlot = team's position based on record (pre-lottery)
+// actualPick = where they landed after the lottery drawing
 const JAZZ_LOTTERY_TEAMS = [
-  { team: 'WAS Wizards', record: '17-65', odds: 14.0, need: 'Franchise cornerstone' },
-  { team: 'IND Pacers', record: '19-63', odds: 14.0, need: 'Replace Haliburton (torn Achilles)' },
-  { team: 'BKN Nets', record: '20-62', odds: 14.0, need: 'Star rebuild piece around MPJ' },
-  { team: 'UTAH JAZZ', record: '22-60', odds: 11.5, need: 'Complete the core' },
-  { team: 'SAC Kings', record: '22-60', odds: 11.5, need: 'Sabonis/LaVine wing help' },
-  { team: 'MEM Grizzlies', record: '25-57', odds: 9.0, need: 'Ja Morant support wing' },
-  { team: 'NOP Pelicans', record: '26-56', odds: 6.8, need: 'Complement Zion/Murphy' },
-  { team: 'DAL Mavericks', record: '26-56', odds: 6.7, need: 'Build around Flagg/Kyrie' },
-  { team: 'CHI Bulls', record: '31-51', odds: 4.5, need: 'Young talent (post-LaVine trade)' },
-  { team: 'MIL Bucks', record: '32-50', odds: 3.0, need: 'Giannis supporting cast' },
-  { team: 'GSW Warriors', record: '37-45', odds: 2.0, need: 'Post-Steph transition scorer' },
-  { team: 'LAC Clippers', record: '42-40', odds: 1.5, need: 'Rebuild post-Harden/Zubac trades' },
-  { team: 'MIA Heat', record: '43-39', odds: 1.0, need: 'Culture wing next to Powell/Herro' },
-  { team: 'CHA Hornets', record: '44-38', odds: 0.5, need: 'LaMelo/Miller running mate' },
+  { team: 'WAS Wizards', record: '17-65', odds: 14.0, need: 'Franchise cornerstone', actualPick: 1, preLotterySlot: 1 },
+  { team: 'UTAH JAZZ', record: '22-60', odds: 11.5, need: 'Complete the core', actualPick: 2, preLotterySlot: 5 },
+  { team: 'MEM Grizzlies', record: '25-57', odds: 9.0, need: 'Ja Morant support wing', actualPick: 3, preLotterySlot: 6 },
+  { team: 'CHI Bulls', record: '31-51', odds: 4.5, need: 'Young talent (post-LaVine trade)', actualPick: 4, preLotterySlot: 9 },
+  { team: 'LAC Clippers (via IND)', record: '19-63', odds: 14.0, need: 'Replace Haliburton (torn Achilles)', actualPick: 5, preLotterySlot: 2 },
+  { team: 'BKN Nets', record: '20-62', odds: 14.0, need: 'Star rebuild piece around MPJ', actualPick: 6, preLotterySlot: 3 },
+  { team: 'SAC Kings', record: '22-60', odds: 11.5, need: 'Sabonis/LaVine wing help', actualPick: 7, preLotterySlot: 4 },
+  { team: 'ATL Hawks (via NOP)', record: '26-56', odds: 6.75, need: 'Complement Zion/Murphy', actualPick: 8, preLotterySlot: 8 },
+  { team: 'DAL Mavericks', record: '26-56', odds: 6.75, need: 'Build around Flagg/Kyrie', actualPick: 9, preLotterySlot: 7 },
+  { team: 'MIL Bucks', record: '32-50', odds: 3.0, need: 'Giannis supporting cast', actualPick: 10, preLotterySlot: 10 },
+  { team: 'GSW Warriors', record: '37-45', odds: 2.0, need: 'Post-Steph transition scorer', actualPick: 11, preLotterySlot: 11 },
+  { team: 'OKC Thunder (via LAC)', record: '42-40', odds: 1.5, need: 'Rebuild post-Harden/Zubac trades', actualPick: 12, preLotterySlot: 12 },
+  { team: 'MIA Heat', record: '43-39', odds: 1.0, need: 'Culture wing next to Powell/Herro', actualPick: 13, preLotterySlot: 13 },
+  { team: 'CHA Hornets', record: '44-38', odds: 0.5, need: 'LaMelo/Miller running mate', actualPick: 14, preLotterySlot: 14 },
 ];
 
-// Simulate lottery using weighted random selection
+// Return actual 2026 NBA Draft Lottery results (May 10, 2026)
 function simulateLottery(lotteryTeams) {
-  const teams = lotteryTeams.map(t => ({ ...t }));
-  const lotteryResult = [];
-
-  // Top 4 picks determined by lottery balls
-  for (let pick = 0; pick < 4; pick++) {
-    const totalOdds = teams.reduce((s, t) => s + t.odds, 0);
-    let rand = Math.random() * totalOdds;
-    let selected = teams[0];
-    for (const t of teams) {
-      rand -= t.odds;
-      if (rand <= 0) { selected = t; break; }
-    }
-    lotteryResult.push({ ...selected, pick: pick + 1 });
-    const idx = teams.findIndex(t => t.team === selected.team);
-    teams.splice(idx, 1);
-  }
-
-  // Picks 5-14 go in reverse-record order
-  teams.forEach((t, i) => {
-    lotteryResult.push({ ...t, pick: 5 + i });
-  });
-
-  return lotteryResult;
+  return lotteryTeams.map((t, i) => ({ ...t, pick: t.actualPick || (i + 1) }));
 }
 
 
@@ -5453,6 +5459,32 @@ function applyTeamColors(colors) {
 }
 
 // NBA Vault standalone brand theme — used on Picks page
+// ============================================================
+// CHAT CONFIG — Supabase-powered team chat
+// ============================================================
+// To enable: (1) Create a Supabase project  (2) Run the SQL below  (3) Set url + key
+// SQL:
+//   create table chat_messages (
+//     id uuid primary key default gen_random_uuid(),
+//     team_slug text not null,
+//     nickname text not null,
+//     avatar_color text default '#888',
+//     message text not null check(char_length(message) <= 500),
+//     created_at timestamptz default now()
+//   );
+//   create index idx_chat_team on chat_messages(team_slug, created_at desc);
+//   alter table chat_messages enable row level security;
+//   create policy "Anyone can read" on chat_messages for select using (true);
+//   create policy "Anyone can insert" on chat_messages for insert with check (char_length(message) <= 500);
+//   -- Enable Realtime on the table in Supabase Dashboard > Database > Replication
+const CHAT_CONFIG = {
+  supabaseUrl: '',   // e.g. 'https://xyz.supabase.co'
+  supabaseKey: '',   // anon/public key
+  get enabled() { return !!(this.supabaseUrl && this.supabaseKey); },
+};
+
+const PROFANITY_LIST = ['fuck','shit','ass','bitch','damn','dick','pussy','cunt','fag','nigger','retard'];
+
 const VAULT_COLORS = {
   primary: '#1A1F3D', secondary: '#D4A843', midnight: '#0B0E1A',
   deep: '#111428', light: '#2A3060', black: '#000000'
@@ -5752,36 +5784,84 @@ function getTeamData(config, field) {
         if (radar.Shooting >= 75) fit += 1; // shooting is always valuable
         fit = Math.min(10, Math.max(3, fit));
 
-        // Build analysis text
+        // Build rich analysis text (4-5 sentences, Jazz-quality)
         const parts = [];
-        const compsStr = (p.comps || []).length > 0 ? ` Scouts compare him to ${p.comps[0]}.` : '';
+        const stats = p.stats || {};
+        const comps = p.comps || [];
+        const strengths = p.strengths || [];
 
+        // Find team's lottery pick number
+        const lotteryEntry = JAZZ_LOTTERY_TEAMS.find(t => t.team.includes(config.abbr) || t.team.includes(config.name));
+        const pickNum = lotteryEntry ? lotteryEntry.actualPick : null;
+        const pickContext = pickNum ? `at #${pickNum}` : '';
+
+        // (1) Position fit + roster context (always lead with this)
         if (posMatch && overlapping.length === 0) {
-          parts.push(`${last} fills a clear gap at ${matchedNeeds[0]} for the ${config.fullName} — there's no starter at his position.`);
+          parts.push(`${last} fills an immediate need at ${matchedNeeds[0]} for the ${config.fullName} ${pickContext} — there's no starter currently slotted at his position, making him a day-one plug-in for ${config.coach}'s system.`);
+        } else if (posMatch && overlapping.length === 1) {
+          parts.push(`${last} addresses the ${config.fullName}'s priority at ${matchedNeeds[0]} ${pickContext}, though he'd need to earn minutes from ${overlapNames[0]}. ${config.coach} could deploy both in two-${matchedNeeds[0]} lineups or develop ${last} as the long-term starter.`);
         } else if (posMatch) {
-          parts.push(`${last} addresses the ${config.fullName}'s need at ${matchedNeeds[0]}, though he'd compete with ${overlapNames[0] || 'the current starter'} for minutes.`);
+          parts.push(`The ${config.fullName} need ${matchedNeeds[0]} help, but ${last} faces a crowded rotation — ${overlapNames.join(' and ')} already play his position. ${config.coach} would need to move pieces or get creative with minutes.`);
         } else {
-          parts.push(`${last} plays ${playerPos}, which isn't the ${config.fullName}'s top priority (${teamNeeds.join('/')}).`);
+          parts.push(`${last} plays ${playerPos}, which isn't the ${config.fullName}'s top priority (they need ${teamNeeds.join('/')}). That said, best-player-available at ${pickContext || 'this range'} is hard to pass up when the talent is this clear.`);
         }
 
-        // Roster synergy
-        if (bestScorerName && primaryPos !== 'PG' && bestPasserName) {
-          parts.push(`With ${bestPasserName} creating and ${bestScorerName} drawing attention, ${last} would get quality looks.`);
+        // (2) Lineup synergy with specific starters
+        if (bestScorerName && bestPasserName && bestScorerName !== bestPasserName) {
+          if (radar.Shooting >= 70) {
+            parts.push(`His ${stats.ppg} PPG and shooting ability complement ${bestPasserName}'s playmaking — with ${bestScorerName} drawing doubles, ${last} would feast on open looks in the half-court.`);
+          } else if (radar.Athleticism >= 80) {
+            parts.push(`${last}'s athleticism and ${stats.ppg} PPG scoring create a devastating transition duo alongside ${bestPasserName}, while ${bestScorerName}'s gravity opens driving lanes in the half-court.`);
+          } else {
+            parts.push(`Playing alongside ${bestScorerName} (scoring) and ${bestPasserName} (distribution), ${last} would have an ideal supporting cast to develop his ${stats.ppg} PPG scoring in ${config.coach}'s system.`);
+          }
         } else if (bestScorerName) {
-          parts.push(`Playing alongside ${bestScorerName} would give ${last} room to operate.`);
+          parts.push(`Pairing ${last} with ${bestScorerName} gives ${config.coach} a versatile scoring duo — ${last}'s ${stats.ppg} PPG adds another dimension to the offense.`);
         }
 
-        // Prospect strengths in team context
-        if (radar.Shooting >= 75) parts.push(`His shooting (${radar.Shooting}/100) adds floor spacing ${config.coach} can build around.`);
-        else if (radar.Defense >= 75) parts.push(`His defensive upside (${radar.Defense}/100) is exactly what ${config.coach} values.`);
-        else if (radar.Athleticism >= 85) parts.push(`Elite athleticism gives ${config.coach} a dynamic weapon in transition.`);
-        else if (radar.Playmaking >= 75) parts.push(`His playmaking (${radar.Playmaking}/100) adds a creative dimension to the offense.`);
+        // (3) Prospect-specific skill in team context (use radar + stats)
+        if (radar.Shooting >= 80) {
+          parts.push(`The shooting is the headline: ${last}'s ${radar.Shooting}/100 perimeter game spaces the floor for everyone and gives ${config.coach} a reliable three-level scorer who can play on or off the ball.`);
+        } else if (radar.Shooting >= 70 && radar.Defense >= 70) {
+          parts.push(`The two-way profile is what makes ${last} special — ${radar.Shooting}/100 shooting paired with ${radar.Defense}/100 defensive rating gives ${config.coach} a 3-and-D archetype that every modern NBA team covets.`);
+        } else if (radar.Defense >= 78) {
+          parts.push(`Defensively, ${last} is exactly what ${config.coach} wants — a ${radar.Defense}/100 defender who can switch across positions and anchor the scheme. The offense will develop; the defense translates immediately.`);
+        } else if (radar.Athleticism >= 85) {
+          parts.push(`The raw athletic tools are elite (${radar.Athleticism}/100) — ${config.coach} can build around ${last}'s transition scoring and rim pressure while developing the perimeter game over time.`);
+        } else if (radar.Playmaking >= 78) {
+          parts.push(`${last}'s court vision (${radar.Playmaking}/100 playmaking, ${stats.apg} APG) is what separates him — he reads defenses at an advanced level and would unlock better shots for the entire ${config.name} roster.`);
+        } else if (radar.IQ >= 78) {
+          parts.push(`What stands out is the basketball IQ (${radar.IQ}/100) — ${last} makes winning plays, rarely turns it over, and fits seamlessly into any system. ${config.coach} would trust him immediately.`);
+        } else {
+          parts.push(`At ${p.height} with ${stats.ppg}/${stats.rpg}/${stats.apg} production, ${last} brings solid two-way value that ${config.coach} can mold into the ${config.fullName}'s system.`);
+        }
 
-        // Concerns
-        if (overlapping.length >= 2) parts.push(`Roster fit is tight — ${overlapNames.join(' and ')} already occupy his position.`);
-        if (p.concerns && p.concerns[0]) parts.push(p.concerns[0].split(' — ')[0] + '.');
+        // (4) Concerns in team context
+        if (overlapping.length >= 2) {
+          parts.push(`The roster fit is the main concern — ${overlapNames.join(', ')} already occupy his spot, so drafting ${last} signals either a trade is coming or ${config.coach} sees a positional shift.`);
+        } else if (p.concerns && p.concerns[0]) {
+          const concern = p.concerns[0];
+          if (concern.toLowerCase().includes('shoot') || concern.toLowerCase().includes('three')) {
+            parts.push(`The shooting concern (${concern.split(' — ')[0].toLowerCase()}) matters here — ${config.coach} needs spacing, and ${last} would need to develop that part of his game to earn full-time minutes.`);
+          } else if (concern.toLowerCase().includes('size') || concern.toLowerCase().includes('height') || concern.toLowerCase().includes('undersized')) {
+            parts.push(`Size is the red flag — ${concern.split(' — ')[0].toLowerCase()} could limit his defensive ceiling, though the offensive production may outweigh it for the ${config.fullName}.`);
+          } else if (concern.toLowerCase().includes('injur') || concern.toLowerCase().includes('health')) {
+            parts.push(`The durability question (${concern.split(' — ')[0].toLowerCase()}) adds risk, but the talent when healthy is clear. The ${config.fullName} need to weigh upside vs. availability.`);
+          } else {
+            parts.push(`The concern: ${concern.split(' — ')[0].toLowerCase()}. But at ${pickContext || 'this range'}, you're drafting upside, and ${last}'s ceiling outweighs the risk.`);
+          }
+        }
 
-        parts.push(compsStr.trim());
+        // (5) NBA comparison + ceiling sentence
+        if (comps.length > 0) {
+          if (fit >= 8) {
+            parts.push(`Think ${comps[0]} with ${config.name} DNA — ${last} could be a franchise-altering pick for the ${config.fullName}.`);
+          } else if (fit >= 6) {
+            parts.push(`The ${comps[0]} comparison is apt — ${last} projects as a quality starter who raises the ${config.fullName}'s ceiling.`);
+          } else {
+            parts.push(`Scouts see ${comps[0]} upside, though ${last} would need a clear role to reach that ceiling with the ${config.fullName}.`);
+          }
+        }
 
         return { ...p, teamFit: fit, teamFitAnalysis: parts.filter(Boolean).join(' ') };
       });
@@ -9447,6 +9527,21 @@ function DraftSimulator() {
   const [teamPickNum, setTeamPickNum] = useState(4);
   const [userPick, setUserPick] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [draftBoard, setDraftBoard] = useState([]);
+  const [draftComplete, setDraftComplete] = useState(false);
+  const [expandedPick, setExpandedPick] = useState(null);
+  const [tradeChoice, setTradeChoice] = useState(null); // null, 'stay', or trade object
+
+  const getDraftGrade = (prospectRank, pickNumber) => {
+    const diff = pickNumber - prospectRank;
+    if (diff >= 4) return { grade: 'A+', label: 'MASSIVE STEAL', color: 'text-green-400', bg: 'bg-green-400/15' };
+    if (diff >= 2) return { grade: 'A', label: 'STEAL', color: 'text-green-400', bg: 'bg-green-400/10' };
+    if (diff >= 0) return { grade: 'A-', label: 'GREAT VALUE', color: 'text-emerald-400', bg: 'bg-emerald-400/10' };
+    if (diff >= -2) return { grade: 'B+', label: 'SOLID PICK', color: 'text-yellow-400', bg: 'bg-yellow-400/10' };
+    if (diff >= -4) return { grade: 'B', label: 'SLIGHT REACH', color: 'text-yellow-500', bg: 'bg-yellow-500/10' };
+    if (diff >= -6) return { grade: 'C+', label: 'REACH', color: 'text-orange-400', bg: 'bg-orange-400/10' };
+    return { grade: 'C', label: 'MAJOR REACH', color: 'text-red-400', bg: 'bg-red-400/10' };
+  };
 
   const teamFullName = config.fullName.toUpperCase();
   const teamLotteryEntry = lotteryTeams.find(t => t.team.includes(config.name.toUpperCase()) || t.team.includes(config.abbr));
@@ -9473,11 +9568,14 @@ function DraftSimulator() {
     setPicks([]);
     setAvailable([...prospects]);
     setUserPick(null);
+    setDraftBoard([]);
+    setDraftComplete(false);
+    setExpandedPick(null);
+    setTradeChoice(null);
 
-    // Show lottery results for 3s then start picks
+    // Show lottery results for 3s then show trade offers
     setTimeout(() => {
-      setSimState('simulating');
-      simulatePicks([...prospects], [], 1, lottery, teamPick);
+      setSimState('trading');
     }, 3000);
   };
 
@@ -9513,41 +9611,190 @@ function DraftSimulator() {
     setShowConfetti(true);
     setSimState('done');
     setTimeout(() => setShowConfetti(false), 3000);
+
+    // Build board: picks before user + user's pick
+    const userEntry = { ...(lotteryOrder[teamPickNum - 1] || {}), player: prospect, isUserPick: true, pick: teamPickNum };
+    const board = [...picks, userEntry];
+    setDraftBoard(board);
+
+    // Continue draft for remaining lottery picks
+    const remainingAvail = available.filter(p => p.rank !== prospect.rank);
+    continueDraft(remainingAvail, board, teamPickNum + 1);
+  };
+
+  const continueDraft = (avail, currentBoard, pickNum) => {
+    if (pickNum > 14 || pickNum > lotteryOrder.length) {
+      setDraftComplete(true);
+      return;
+    }
+    setTimeout(() => {
+      const team = lotteryOrder[pickNum - 1];
+      if (!team) { setDraftComplete(true); return; }
+      let pickIdx = 0;
+      if (Math.random() < 0.25 && avail.length > 2) {
+        pickIdx = Math.floor(Math.random() * Math.min(3, avail.length));
+      }
+      const picked = avail[pickIdx];
+      if (!picked) { setDraftComplete(true); return; }
+      const newAvail = [...avail]; newAvail.splice(pickIdx, 1);
+      const newBoard = [...currentBoard, { ...team, player: picked, pick: pickNum }];
+      setDraftBoard(newBoard);
+      continueDraft(newAvail, newBoard, pickNum + 1);
+    }, 800);
+  };
+
+  // Generate trade offers based on team's pick position
+  const getTradeOffers = () => {
+    const starters = (teamData.players || []).filter(pl => pl.starter);
+    const bestTradeAsset = starters.sort((a, b) => (b.stats?.ppg || 0) - (a.stats?.ppg || 0))[1]; // 2nd best starter
+    const offers = [];
+
+    // Trade UP (if not already #1)
+    if (teamPickNum > 1) {
+      const targetPick = Math.max(1, teamPickNum - 1);
+      const targetTeam = lotteryOrder[targetPick - 1];
+      offers.push({
+        id: 'up',
+        label: 'TRADE UP',
+        emoji: '\u2B06',
+        desc: `Move up to #${targetPick}`,
+        send: `#${teamPickNum} pick + ${bestTradeAsset?.name || 'key rotation player'}`,
+        receive: `#${targetPick} pick from ${targetTeam?.team || 'unknown'}`,
+        newPick: targetPick,
+        risk: 'High risk — gut the roster for a better prospect',
+        color: 'text-red-400',
+        bg: 'bg-red-400/10',
+        border: 'border-red-400/30',
+      });
+    }
+
+    // STAY PUT
+    offers.push({
+      id: 'stay',
+      label: 'STAY PUT',
+      emoji: '\u2714',
+      desc: `Keep the #${teamPickNum} pick`,
+      send: 'Nothing',
+      receive: `Draft at #${teamPickNum}`,
+      newPick: teamPickNum,
+      risk: 'No risk — draft your guy at value',
+      color: 'text-team-secondary',
+      bg: 'bg-team-secondary/10',
+      border: 'border-team-secondary/30',
+    });
+
+    // Trade DOWN (if not already last lottery pick)
+    if (teamPickNum < 14) {
+      const targetPick = Math.min(14, teamPickNum + 2);
+      const targetTeam = lotteryOrder[targetPick - 1];
+      offers.push({
+        id: 'down',
+        label: 'TRADE DOWN',
+        emoji: '\u2B07',
+        desc: `Drop to #${targetPick} + bonus pick`,
+        send: `#${teamPickNum} pick`,
+        receive: `#${targetPick} pick + future 1st from ${targetTeam?.team || 'unknown'}`,
+        newPick: targetPick,
+        risk: 'Moderate risk — more assets but lose top prospect access',
+        color: 'text-blue-400',
+        bg: 'bg-blue-400/10',
+        border: 'border-blue-400/30',
+      });
+    }
+
+    return offers;
+  };
+
+  const executeTrade = (offer) => {
+    setTradeChoice(offer);
+    setTeamPickNum(offer.newPick);
+    setSimState('simulating');
+    simulatePicks([...prospects], [], 1, lotteryOrder, offer.newPick);
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       {simState === 'idle' && (
         <div className="text-center py-8">
-          <div className="text-team-secondary font-bold animate-pulse">Starting lottery simulation...</div>
+          <div className="text-team-secondary font-bold animate-pulse">Loading 2026 Draft Lottery results...</div>
         </div>
       )}
 
       {simState === 'lottery' && (
         <div className="glass rounded-2xl p-6 animate-fade-in">
-          <h3 className="text-lg font-bold text-team-secondary text-center mb-4">Lottery Results</h3>
-          <p className="text-center text-gray-400 text-sm mb-4">The ping pong balls have spoken...</p>
+          <h3 className="text-lg font-bold text-team-secondary text-center mb-4">2026 NBA Draft Lottery Results</h3>
+          <p className="text-center text-gray-400 text-sm mb-4">Official results — May 10, 2026</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {lotteryOrder.slice(0, 14).map((t, i) => (
-              <div key={i} className={`rounded-lg p-2 text-center text-sm ${t.team === teamLotteryName ? 'bg-team-secondary/20 border border-team-secondary/50' : 'glass'}`}>
-                <div className="font-black text-team-secondary">#{i + 1}</div>
-                <div className={`text-xs font-semibold ${t.team === teamLotteryName ? 'text-team-secondary' : 'text-gray-300'}`}>{t.team}</div>
-              </div>
-            ))}
+            {lotteryOrder.slice(0, 14).map((t, i) => {
+              const movement = t.preLotterySlot ? t.preLotterySlot - t.actualPick : 0;
+              return (
+                <div key={i} className={`rounded-lg p-2 text-center text-sm ${t.team === teamLotteryName || t.team.includes(config.name.toUpperCase()) || t.team.includes(config.abbr) ? 'bg-team-secondary/20 border border-team-secondary/50' : 'glass'}`}>
+                  <div className="font-black text-team-secondary">#{t.actualPick || i + 1}</div>
+                  <div className={`text-xs font-semibold ${t.team === teamLotteryName || t.team.includes(config.name.toUpperCase()) || t.team.includes(config.abbr) ? 'text-team-secondary' : 'text-gray-300'}`}>{t.team}</div>
+                  {movement !== 0 && (
+                    <div className={`text-[10px] font-bold ${movement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {movement > 0 ? `▲${movement}` : `▼${Math.abs(movement)}`}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="text-center mt-4">
             <div className="text-team-secondary font-bold">{config.name} pick at #{teamPickNum}</div>
-            <div className="text-gray-500 text-xs animate-pulse mt-2">Simulating picks...</div>
+            <div className="text-gray-500 text-xs animate-pulse mt-2">Evaluating trade offers...</div>
+          </div>
+        </div>
+      )}
+
+      {/* Trade Offers Phase */}
+      {simState === 'trading' && (
+        <div className="glass rounded-2xl p-6 animate-fade-in">
+          <div className="text-center mb-5">
+            <h3 className="text-lg font-black text-team-secondary">DRAFT DAY TRADE OFFERS</h3>
+            <p className="text-gray-400 text-sm mt-1">The {config.fullName} hold the #{teamPickNum} pick. The phone is ringing.</p>
+          </div>
+          <div className="space-y-3">
+            {getTradeOffers().map(offer => (
+              <button key={offer.id} onClick={() => executeTrade(offer)}
+                className={`w-full glass rounded-xl p-4 text-left transition-all hover:scale-[1.01] border ${offer.border}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{offer.emoji}</span>
+                    <span className={`font-black text-sm ${offer.color}`}>{offer.label}</span>
+                  </div>
+                  <span className="text-xs text-gray-500">{offer.desc}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className={`rounded-lg p-2 ${offer.bg}`}>
+                    <div className="text-[10px] text-gray-500 mb-0.5">YOU SEND</div>
+                    <div className="text-xs font-semibold text-gray-200">{offer.send}</div>
+                  </div>
+                  <div className={`rounded-lg p-2 ${offer.bg}`}>
+                    <div className="text-[10px] text-gray-500 mb-0.5">YOU RECEIVE</div>
+                    <div className="text-xs font-semibold text-gray-200">{offer.receive}</div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-gray-500 italic">{offer.risk}</div>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       {(simState === 'simulating' || simState === 'picking' || simState === 'done') && (
         <div className="glass rounded-2xl p-6">
-          {/* Lottery result summary */}
+          {/* Lottery result summary + trade context */}
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-team-primary/30">
-            <span className="text-xs text-gray-500">{config.name} lottery position: <span className="text-team-secondary font-bold">#{teamPickNum}</span></span>
-            <span className="text-xs text-gray-600">{teamPickNum <= 4 ? 'Lottery winner!' : teamPickNum <= 7 ? 'Solid range' : 'Fell in the draft'}</span>
+            <span className="text-xs text-gray-500">
+              {config.name} picking at: <span className="text-team-secondary font-bold">#{teamPickNum}</span>
+              {tradeChoice && tradeChoice.id !== 'stay' && (
+                <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${tradeChoice.id === 'up' ? 'bg-red-400/20 text-red-400' : 'bg-blue-400/20 text-blue-400'}`}>
+                  {tradeChoice.id === 'up' ? 'TRADED UP' : 'TRADED DOWN'}
+                </span>
+              )}
+            </span>
+            <span className="text-xs text-gray-600">{teamPickNum <= 4 ? 'Lottery winner!' : teamPickNum <= 7 ? 'Solid position' : 'Dropped in lottery'}</span>
           </div>
 
           {/* Previous picks */}
@@ -9608,17 +9855,29 @@ function DraftSimulator() {
                 </div>
               )}
 
-              <div className="glass rounded-xl p-3 mb-4 flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-team-secondary flex items-center justify-center text-black text-sm font-bold">#{teamPickNum}</div>
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-team-secondary">{config.fullName.toUpperCase()}</div>
-                  <div className="text-xs text-gray-400">select</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-team-secondary text-lg">{userPick.name}</div>
-                  <div className="text-xs text-gray-400">{userPick.pos} | {userPick.school}</div>
-                </div>
-              </div>
+              {/* Draft Grade Hero Card */}
+              {(() => {
+                const g = getDraftGrade(userPick.rank, teamPickNum);
+                return (
+                  <div className={`rounded-xl p-4 mb-4 border ${g.bg} border-current/20 flex items-center gap-4`} style={{borderColor: 'currentColor'}}>
+                    <div className={`w-14 h-14 rounded-xl ${g.bg} flex items-center justify-center border border-current/30`} style={{borderColor: 'currentColor'}}>
+                      <span className={`text-2xl font-black ${g.color}`}>{g.grade}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-team-secondary text-lg">{userPick.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${g.bg} ${g.color}`}>{g.label}</span>
+                      </div>
+                      <div className="text-xs text-gray-400">{userPick.pos} | {userPick.school} | Rank #{userPick.rank} at Pick #{teamPickNum}</div>
+                    </div>
+                    <div className="text-right hidden md:block">
+                      <div className="text-xs text-gray-500">with the</div>
+                      <div className="text-team-secondary font-black text-xl">#{teamPickNum}</div>
+                      <div className="text-xs text-gray-500">pick</div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="glass rounded-xl p-4 mb-4">
                 <h3 className="text-sm font-bold text-team-secondary mb-2">{config.name} Fit Analysis</h3>
@@ -9703,9 +9962,64 @@ function DraftSimulator() {
                 </div>
               </div>
 
+              {/* Full Draft Board */}
+              {draftBoard.length > 0 && (
+                <div className="glass rounded-xl p-4 mt-4">
+                  <h3 className="text-sm font-bold text-team-secondary mb-3">
+                    {draftComplete ? '2026 NBA Draft — Complete First Round' : '2026 NBA Draft — Live Board'}
+                    {!draftComplete && <span className="text-gray-500 animate-pulse ml-2">picks incoming...</span>}
+                  </h3>
+                  <div className="space-y-1.5">
+                    {draftBoard.map((p, i) => {
+                      const g = getDraftGrade(p.player.rank, p.pick);
+                      const isUser = p.isUserPick;
+                      const isExpanded = expandedPick === i;
+                      return (
+                        <div key={i} className="animate-fade-in">
+                          <button onClick={() => setExpandedPick(isExpanded ? null : i)}
+                            className={`w-full flex items-center gap-2 rounded-lg p-2 text-left transition-all ${isUser ? 'bg-team-secondary/15 border border-team-secondary/40' : 'glass hover:bg-gray-800/50'}`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isUser ? 'bg-team-secondary text-black' : 'bg-gray-700 text-gray-300'}`}>
+                              {p.pick}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-xs font-semibold ${isUser ? 'text-team-secondary' : 'text-gray-400'}`}>{p.team}</span>
+                            </div>
+                            <div className="text-right flex items-center gap-2">
+                              <div>
+                                <div className={`font-bold text-xs ${isUser ? 'text-team-secondary' : 'text-gray-200'}`}>{p.player.name}</div>
+                                <div className="text-[10px] text-gray-500">{p.player.pos} | {p.player.school}</div>
+                              </div>
+                              <div className={`w-8 h-8 rounded-lg ${g.bg} flex items-center justify-center`}>
+                                <span className={`text-xs font-black ${g.color}`}>{g.grade}</span>
+                              </div>
+                              <span className="text-gray-600 text-xs">{isExpanded ? '▲' : '▼'}</span>
+                            </div>
+                          </button>
+                          {isExpanded && (
+                            <div className="glass rounded-lg p-3 mt-1 ml-8 animate-fade-in">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${g.bg} ${g.color}`}>{g.label}</span>
+                                <span className="text-[10px] text-gray-500">Ranked #{p.player.rank} | Picked #{p.pick}</span>
+                                <span className="text-[10px] text-gray-500">{p.player.stats.ppg} PPG, {p.player.stats.rpg} RPG, {p.player.stats.apg} APG</span>
+                              </div>
+                              <div className="text-xs text-gray-400 mb-2">{p.player.strengths[0]}</div>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {p.player.comps.map((c, j) => (
+                                  <span key={j} className="px-2 py-0.5 rounded-full text-[10px] bg-gray-800 text-gray-300 border border-gray-700">{c}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="text-center mt-6">
                 <button onClick={startSim} className="px-6 py-2 rounded-full glass text-team-secondary hover:bg-team-secondary/20 text-sm font-semibold">
-                  Run Again (New Lottery)
+                  Run Again (Different Picks)
                 </button>
               </div>
             </div>
@@ -12654,6 +12968,28 @@ SLUG_TO_TAB['daily-picks'] = 'PICKS';
 SLUG_TO_TAB['picks'] = 'PICKS';
 SLUG_TO_TAB['vault-signals'] = 'PICKS';
 
+// Update OG meta tags when navigating between pages
+const OG_DATA = {
+  sim:   { title:'2026 NBA Draft Simulator | NBA Vault', desc:'Pick your team. Run the lottery. Draft your franchise player. Full 14-pick draft board with grades and scouting reports.', img:'og-sim.png' },
+  draft: { title:'2026 NBA Draft Room | NBA Vault', desc:'Top 29 prospects ranked with real college stats, radar charts, strengths/concerns, and team fit analysis for all 30 teams.', img:'og-draft.png' },
+  vault: { title:'Vault Engine — NBA Betting Intelligence | NBA Vault', desc:'Vault Engine detects mispriced betting lines. Real DraftKings & FanDuel lines. Free Vault Lock of the Day.', img:'og-card.png' },
+  roster:{ title:'NBA Team Rosters & Analysis | NBA Vault', desc:'Full roster breakdowns, player stats, radar charts, and depth charts for all 30 NBA teams.', img:'og-roster.png' },
+  trade: { title:'NBA Trade Center | NBA Vault', desc:'Build trades, check fairness, explore AI trade ideas, and track player valuations across all 30 NBA teams.', img:'og-trade.png' },
+  poll:  { title:'NBA Fan Polls | NBA Vault', desc:'Vote on the biggest debates in basketball. See how your opinions compare across all 30 fanbases.', img:'og-poll.png' },
+};
+function updateOGTags(slug) {
+  const data = OG_DATA[slug];
+  if (!data) return;
+  const set = (sel, val) => { const el = document.querySelector(sel); if (el) el.setAttribute('content', val); };
+  set('meta[property="og:title"]', data.title);
+  set('meta[property="og:description"]', data.desc);
+  set('meta[property="og:url"]', 'https://nbavault.com/' + slug);
+  set('meta[property="og:image"]', 'https://nbavault.com/' + data.img);
+  set('meta[name="twitter:title"]', data.title);
+  set('meta[name="twitter:description"]', data.desc);
+  set('meta[name="twitter:image"]', 'https://nbavault.com/' + data.img);
+}
+
 function getTabFromPath() {
   // Read from pathname (404.html is a copy of index.html, so deep links work directly)
   const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
@@ -12714,6 +13050,189 @@ function WelcomeModal({ onSelect }) {
   );
 }
 
+// ============================================================
+// SECTION: TEAM CHAT (Supabase-powered)
+// ============================================================
+function ChatPanel() {
+  const { config } = useTeam();
+  const teamSlug = config.abbr.toLowerCase();
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [nickname, setNickname] = useState(() => localStorage.getItem('nbavault_chat_nick') || '');
+  const [nickInput, setNickInput] = useState('');
+  const [avatarColor] = useState(() => {
+    const stored = localStorage.getItem('nbavault_chat_color');
+    if (stored) return stored;
+    const c = '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+    localStorage.setItem('nbavault_chat_color', c);
+    return c;
+  });
+  const [lastSent, setLastSent] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(1);
+  const messagesEndRef = useRef(null);
+  const sbRef = useRef(null);
+  const channelRef = useRef(null);
+
+  // Initialize Supabase client
+  useEffect(() => {
+    if (!CHAT_CONFIG.enabled || !window.supabase) return;
+    sbRef.current = window.supabase.createClient(CHAT_CONFIG.supabaseUrl, CHAT_CONFIG.supabaseKey);
+  }, []);
+
+  // Load history + subscribe to new messages when team changes or chat opens
+  useEffect(() => {
+    if (!open || !sbRef.current || !nickname) return;
+    const sb = sbRef.current;
+
+    // Fetch last 50 messages
+    sb.from('chat_messages')
+      .select('*')
+      .eq('team_slug', teamSlug)
+      .order('created_at', { ascending: true })
+      .limit(50)
+      .then(({ data }) => { if (data) setMessages(data); });
+
+    // Subscribe to new inserts
+    const ch = sb.channel(`chat-${teamSlug}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'chat_messages',
+        filter: `team_slug=eq.${teamSlug}`
+      }, (payload) => {
+        setMessages(prev => [...prev.slice(-99), payload.new]);
+      })
+      .subscribe();
+
+    // Presence for online count
+    const presence = sb.channel(`presence-${teamSlug}`);
+    presence.on('presence', { event: 'sync' }, () => {
+      setOnlineCount(Object.keys(presence.presenceState()).length);
+    });
+    presence.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await presence.track({ user: nickname });
+      }
+    });
+
+    channelRef.current = ch;
+    return () => {
+      sb.removeChannel(ch);
+      sb.removeChannel(presence);
+    };
+  }, [open, teamSlug, nickname]);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const setNick = () => {
+    const n = nickInput.trim().slice(0, 20);
+    if (!n) return;
+    setNickname(n);
+    localStorage.setItem('nbavault_chat_nick', n);
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || !sbRef.current || !nickname) return;
+    const now = Date.now();
+    if (now - lastSent < 2000) return; // Rate limit: 1 msg per 2s
+    const text = input.trim().slice(0, 500);
+    // Profanity filter
+    const lower = text.toLowerCase();
+    if (PROFANITY_LIST.some(w => lower.includes(w))) return;
+    setLastSent(now);
+    setInput('');
+    await sbRef.current.from('chat_messages').insert({
+      team_slug: teamSlug,
+      nickname: nickname,
+      avatar_color: avatarColor,
+      message: text,
+    });
+  };
+
+  if (!CHAT_CONFIG.enabled) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-40">
+      {!open ? (
+        <button onClick={() => setOpen(true)}
+          className="w-12 h-12 rounded-full bg-team-secondary text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </button>
+      ) : (
+        <div className="w-80 h-96 glass rounded-2xl border border-team-primary/30 flex flex-col overflow-hidden shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-team-primary/30 bg-team-primary/20">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-team-secondary">{config.name} Chat</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">{onlineCount} online</span>
+            </div>
+            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white text-lg">&times;</button>
+          </div>
+
+          {/* Nickname prompt */}
+          {!nickname ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-4 gap-3">
+              <div className="text-sm font-bold text-team-secondary">Pick a nickname</div>
+              <input value={nickInput} onChange={e => setNickInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && setNick()}
+                maxLength={20} placeholder="e.g. JazzFan42"
+                className="w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-700 text-white text-sm focus:border-team-secondary outline-none" />
+              <button onClick={setNick}
+                className="px-4 py-1.5 rounded-full bg-team-secondary text-black text-sm font-bold hover:brightness-110">
+                Join Chat
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+                {messages.length === 0 && (
+                  <div className="text-center text-gray-500 text-xs mt-8">No messages yet. Be the first!</div>
+                )}
+                {messages.map((m, i) => {
+                  const isMe = m.nickname === nickname;
+                  return (
+                    <div key={m.id || i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                      <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-white" style={{ background: m.avatar_color || '#666' }}>
+                        {m.nickname?.[0]?.toUpperCase()}
+                      </div>
+                      <div className={`max-w-[75%] ${isMe ? 'text-right' : ''}`}>
+                        <div className="text-[10px] text-gray-500 mb-0.5">{m.nickname}</div>
+                        <div className={`text-xs px-2.5 py-1.5 rounded-xl ${isMe ? 'bg-team-secondary/20 text-team-secondary' : 'bg-gray-800 text-gray-200'}`}>
+                          {m.message}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="p-2 border-t border-team-primary/30">
+                <div className="flex gap-2">
+                  <input value={input} onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                    maxLength={500} placeholder="Type a message..."
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700 text-white text-xs focus:border-team-secondary outline-none" />
+                  <button onClick={sendMessage}
+                    className="px-3 py-1.5 rounded-lg bg-team-secondary text-black text-xs font-bold hover:brightness-110">
+                    Send
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('nbavault_selected_team'));
   const vaultClickRef = useRef({ count: 0, timer: null });
@@ -12739,6 +13258,7 @@ function App() {
     setActiveTab(tab);
     const slug = TAB_SLUGS[tab] || '';
     history.pushState(null, '', '/' + slug);
+    updateOGTags(slug);
   }, []);
 
   useEffect(() => {
@@ -12941,6 +13461,8 @@ function App() {
         </div>
       </footer>
 
+      {/* Team Chat (Supabase-powered) — renders only if CHAT_CONFIG.enabled */}
+      <ChatPanel />
       {/* AI Chat Scout - disabled for now */}
       {/* <AIChatScout /> */}
     </div>
