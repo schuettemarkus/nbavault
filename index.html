@@ -8526,7 +8526,7 @@ function InteractiveDraftSim() {
 
   // Draft grade based on prospect rank vs pick position
   function getDraftGrade(prospect, pickNum) {
-    const value = prospect.rank - pickNum; // negative = reach, positive = steal
+    const value = pickNum - prospect.rank; // positive = steal (got better player than pick), negative = reach
     if (value >= 5) return { grade: 'A+', label: 'Absolute Steal', color: 'text-green-400' };
     if (value >= 3) return { grade: 'A', label: 'Great Value', color: 'text-green-400' };
     if (value >= 1) return { grade: 'A-', label: 'Solid Pick', color: 'text-green-400' };
@@ -9573,10 +9573,8 @@ function DraftSimulator() {
     setExpandedPick(null);
     setTradeChoice(null);
 
-    // Show lottery results for 3s then show trade offers
-    setTimeout(() => {
-      setSimState('trading');
-    }, 3000);
+    // Skip lottery reveal (results are known) — go straight to trade offers
+    setSimState('trading');
   };
 
   const simulatePicks = (avail, currentPicks, pickNum, lottery, teamPick) => {
