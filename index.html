@@ -8658,7 +8658,24 @@ function InteractiveDraftSim() {
 
   function executeTrade(offer) {
     setTradeUp(offer.id === 'up');
-    setTeamPickNum(offer.newPick);
+    const oldPick = teamPickNum;
+    const newPick = offer.newPick;
+    setTeamPickNum(newPick);
+
+    // Swap teams in the lottery order so the board reflects the trade
+    if (offer.id !== 'stay' && lotteryOrder.length > 0) {
+      const updated = [...lotteryOrder];
+      const oldIdx = oldPick - 1;
+      const newIdx = newPick - 1;
+      if (oldIdx >= 0 && oldIdx < updated.length && newIdx >= 0 && newIdx < updated.length) {
+        // Swap the two entries
+        const temp = { ...updated[oldIdx] };
+        updated[oldIdx] = { ...updated[newIdx], pick: oldPick, actualPick: oldPick };
+        updated[newIdx] = { ...temp, pick: newPick, actualPick: newPick };
+      }
+      setLotteryOrder(updated);
+    }
+
     startPicking();
   }
 
