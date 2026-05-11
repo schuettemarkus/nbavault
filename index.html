@@ -8601,25 +8601,65 @@ function InteractiveDraftSim() {
     return scored[0].prospect;
   }
 
-  // Start the lottery reveal
-  function startLottery() {
+  // Start draft — lottery results are known (May 10, 2026), skip to picking
+  function startDraft() {
     const lottery = simulateLottery(lotteryTeams);
     setLotteryOrder(lottery);
     const teamSlot = lottery.findIndex(t => t.team === teamLotteryName);
     setTeamPickNum(teamSlot >= 0 ? teamSlot + 1 : 7 + Math.floor(Math.random() * 8));
-    setPhase('lottery');
-    setLotteryRevealed(0);
-    // Dramatic reveal: progressively slower — builds tension toward #1
-    // Picks 14-10: 0.9s, Picks 9-5: 1.8s, Picks 4-2: 2.7s, Pick 1: 3.6s
-    let i = 14;
-    const reveal = () => {
-      if (i <= 0) return;
-      i--;
-      setLotteryRevealed(14 - i);
-      const delay = i === 0 ? 3600 : i <= 4 ? 2700 : i <= 9 ? 1800 : 900;
-      setTimeout(reveal, delay);
-    };
-    setTimeout(reveal, 1000);
+    setPhase('trading');
+  }
+
+  // Generate trade offers for the user's pick position
+  function getTradeOffers() {
+    const starters = (teamData.players || []).filter(pl => pl.starter);
+    const tradeAsset = starters.sort((a, b) => (b.stats?.ppg || 0) - (a.stats?.ppg || 0))[1];
+    const offers = [];
+
+    if (teamPickNum > 1) {
+      const targetPick = Math.max(1, teamPickNum - 1);
+      const targetTeam = lotteryOrder[targetPick - 1];
+      offers.push({
+        id: 'up', label: 'TRADE UP', emoji: '\u2B06',
+        desc: `Move up to #${targetPick}`,
+        send: `#${teamPickNum} pick + ${tradeAsset?.name || 'key player'}`,
+        receive: `#${targetPick} pick from ${targetTeam?.team || 'unknown'}`,
+        newPick: targetPick,
+        risk: 'High risk — gut the roster for a better prospect',
+        color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30',
+      });
+    }
+
+    offers.push({
+      id: 'stay', label: 'STAY PUT', emoji: '\u2714',
+      desc: `Keep the #${teamPickNum} pick`,
+      send: 'Nothing', receive: `Draft at #${teamPickNum}`,
+      newPick: teamPickNum,
+      risk: 'No risk — draft your guy at value',
+      color: 'text-team-secondary', bg: 'bg-team-secondary/10', border: 'border-team-secondary/30',
+    });
+
+    if (teamPickNum < 14) {
+      const targetPick = Math.min(14, teamPickNum + 2);
+      const targetTeam = lotteryOrder[targetPick - 1];
+      offers.push({
+        id: 'down', label: 'TRADE DOWN', emoji: '\u2B07',
+        desc: `Drop to #${targetPick} + bonus pick`,
+        send: `#${teamPickNum} pick`,
+        receive: `#${targetPick} pick + future 1st from ${targetTeam?.team || 'unknown'}`,
+        newPick: targetPick,
+        risk: 'Moderate risk — more assets but lose top prospect access',
+        color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30',
+      });
+    }
+
+    return offers;
+  }
+
+  function executeTrade(offer) {
+    setTradeUp(offer.id === 'up');
+    setTeamPickNum(offer.newPick);
+    startPicking();
   }
 
   // Advance one pick
@@ -8866,32 +8906,76 @@ function InteractiveDraftSim() {
         <p className="text-gray-400 text-sm mt-2">Step through every pick. Scout prospects. Make your selection.</p>
       </div>
 
-      {/* PHASE: SETUP */}
+      {/* PHASE: SETUP — show real 2026 draft order */}
       {phase === 'setup' && (
         <div className="glass rounded-2xl p-8 text-center animate-fade-in">
-          <div className="text-6xl mb-4" style={{ filter: 'grayscale(0.3)' }}>&#127936;</div>
-          <h3 className="text-xl font-black text-white mb-2">Ready to Run the Draft?</h3>
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Official Results — May 10, 2026</div>
+          <h3 className="text-xl font-black text-white mb-1">2026 NBA Draft Lottery Order</h3>
           <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-            The lottery will determine draft order based on real odds. Then step through each pick — scout prospects, compare players, and make the call for the {config.fullName}.
+            The lottery is set. Step through each pick, scout prospects, and make the call for the {config.fullName} at <span className="text-team-secondary font-bold">#{teamEntry?.actualPick || '?'}</span>.
           </p>
-          <button onClick={startLottery}
-            className="px-10 py-4 rounded-xl bg-team-secondary text-black font-black text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/30 mb-2">
-            Start Lottery
+          <button onClick={startDraft}
+            className="px-10 py-4 rounded-xl bg-team-secondary text-black font-black text-base hover:opacity-90 transition-all shadow-lg shadow-team-secondary/30 mb-6">
+            Start Draft
           </button>
-          <div className="mt-6 max-w-lg mx-auto space-y-1">
+          <div className="max-w-lg mx-auto space-y-1">
             {lotteryTeams.map((t, i) => {
-              const isTeam = t.team === teamLotteryName;
+              const isTeam = t.team === teamLotteryName || t.team.includes(config.name.toUpperCase()) || t.team.includes(config.abbr);
+              const movement = t.preLotterySlot ? t.preLotterySlot - t.actualPick : 0;
               return (
                 <div key={i} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isTeam ? 'bg-team-secondary/15 border border-team-secondary/30' : 'bg-white/[0.02]'}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${isTeam ? 'bg-team-secondary text-black' : 'bg-gray-800 text-gray-400'}`}>{i + 1}</div>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${isTeam ? 'bg-team-secondary text-black' : 'bg-gray-800 text-gray-400'}`}>{t.actualPick || i + 1}</div>
                   <div className="flex-1 min-w-0">
                     <div className={`text-xs font-bold truncate ${isTeam ? 'text-team-secondary' : 'text-gray-300'}`}>{t.team}</div>
                   </div>
                   <span className="text-[10px] text-gray-500 shrink-0">{t.record}</span>
-                  <span className={`text-[10px] font-bold shrink-0 ${isTeam ? 'text-team-secondary' : 'text-gray-400'}`}>{t.odds}%</span>
+                  {movement !== 0 ? (
+                    <div className={`flex items-center gap-0.5 shrink-0 text-[11px] font-black ${movement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span>{movement > 0 ? '\u25B2' : '\u25BC'}</span>
+                      <span>{Math.abs(movement)}</span>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-gray-600 shrink-0">\u2014</div>
+                  )}
+                  <span className="text-[10px] text-gray-400 shrink-0 hidden sm:block">{t.need}</span>
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* PHASE: TRADE OFFERS — before picks begin */}
+      {phase === 'trading' && (
+        <div className="glass rounded-2xl p-6 animate-fade-in">
+          <div className="text-center mb-5">
+            <h3 className="text-lg font-black text-team-secondary">DRAFT DAY TRADE OFFERS</h3>
+            <p className="text-gray-400 text-sm mt-1">The {config.fullName} hold the #{teamPickNum} pick. The phone is ringing.</p>
+          </div>
+          <div className="space-y-3">
+            {getTradeOffers().map(offer => (
+              <button key={offer.id} onClick={() => executeTrade(offer)}
+                className={`w-full glass rounded-xl p-4 text-left transition-all hover:scale-[1.01] border ${offer.border}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{offer.emoji}</span>
+                    <span className={`font-black text-sm ${offer.color}`}>{offer.label}</span>
+                  </div>
+                  <span className="text-xs text-gray-500">{offer.desc}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className={`rounded-lg p-2 ${offer.bg}`}>
+                    <div className="text-[10px] text-gray-500 mb-0.5">YOU SEND</div>
+                    <div className="text-xs font-semibold text-gray-200">{offer.send}</div>
+                  </div>
+                  <div className={`rounded-lg p-2 ${offer.bg}`}>
+                    <div className="text-[10px] text-gray-500 mb-0.5">YOU RECEIVE</div>
+                    <div className="text-xs font-semibold text-gray-200">{offer.receive}</div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-gray-500 italic">{offer.risk}</div>
+              </button>
+            ))}
           </div>
         </div>
       )}
